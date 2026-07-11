@@ -258,7 +258,7 @@ except Exception as e:
 # --- SIDEBAR INTERAKTIF ---
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/3081/3081986.png", width=60)
-    st.markdown("<h3>Kilo POS</h3><p style='color:gray; font-size:12px; margin-top:-10px;'>Sistem Kasir Pintar AI</p>", unsafe_allow_html=True)
+    st.markdown("<h3>Kilo POS</h3><p class='text-muted' style='font-size:12px; margin-top:-10px;'>Sistem Kasir Pintar AI</p>", unsafe_allow_html=True)
     st.markdown("---")
     
     try:
@@ -293,7 +293,7 @@ st.sidebar.markdown("---")
 st.sidebar.info("💡 **Panduan:** Arahkan kursor ke pojok kiri atas layar untuk menyembunyikan atau memunculkan sidebar ini agar area kerja lebih luas.")
 
 st.sidebar.markdown("<br><br><br>", unsafe_allow_html=True)
-st.sidebar.markdown("<p style='text-align:center; font-size:12px; color:#94a3b8;'>© 2026 Kilo POS System<br>Powered by Apriori Machine Learning</p>", unsafe_allow_html=True)
+st.sidebar.markdown("<p class='text-muted' style='text-align:center; font-size:12px;'>© 2026 Kilo POS System<br>Powered by Apriori Machine Learning</p>", unsafe_allow_html=True)
 
 # --- HERO BANNER ---
 st.markdown("""
@@ -394,7 +394,7 @@ if menu_selection == "Kasir & Rekomendasi":
     with col_sidebar:
         # Panel Keranjang Belanja
         with st.container():
-            st.markdown("<h2 style='margin-top:0; color:#1e293b; border-bottom: 3px solid #3b82f6; padding-bottom: 15px;'>🛒 Keranjang</h2>", unsafe_allow_html=True)
+            st.markdown("<h2 style='margin-top:0; border-bottom: 3px solid #3b82f6; padding-bottom: 15px;'>🛒 Keranjang</h2>", unsafe_allow_html=True)
         
         if len(st.session_state.cart) == 0:
             st.markdown("""
