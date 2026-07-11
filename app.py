@@ -290,7 +290,7 @@ st.sidebar.markdown("**Role:** Administrator")
 st.sidebar.markdown("**Cabang:** Pusat")
 
 st.sidebar.markdown("---")
-st.sidebar.info("💡 **Panduan:** Arahkan kursor ke pojok kiri atas layar untuk menyembunyikan atau memunculkan sidebar ini agar area kerja lebih luas.")
+st.sidebar.info("💡 **Panduan:** Klik ikon panah di pojok kiri atas layar untuk melipat (menyembunyikan) atau memunculkan menu ini.")
 
 st.sidebar.markdown("<br><br><br>", unsafe_allow_html=True)
 st.sidebar.markdown("<p class='text-muted' style='text-align:center; font-size:12px;'>© 2026 Kilo POS System<br>Powered by Apriori Machine Learning</p>", unsafe_allow_html=True)
