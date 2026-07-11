@@ -441,43 +441,41 @@ elif menu_selection == "Visualisasi Data":
         
     st.markdown("<br>", unsafe_allow_html=True)
     
-    col_chart1, col_chart2 = st.columns([1, 1])
-    
-    with col_chart1:
-        with st.container():
-            st.subheader("📍 Peta Kekuatan Rekomendasi")
-            if len(df_rules) > 0:
-                fig = px.scatter(
-                    df_rules, 
-                    x='support', 
-                    y='confidence', 
-                    size='lift',
-                    color='lift',
-                    hover_data=['antecedents', 'consequents'],
-                    labels={'support': 'Frekuensi (Support)', 'confidence': 'Akurasi (Confidence)', 'lift': 'Lift Ratio'},
-                    color_continuous_scale=px.colors.sequential.Plotly3
-                )
-                fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=30, b=0))
-                st.plotly_chart(fig, use_container_width=True)
+    with st.container():
+        st.subheader("📍 Peta Kekuatan Rekomendasi")
+        if len(df_rules) > 0:
+            fig = px.scatter(
+                df_rules, 
+                x='support', 
+                y='confidence', 
+                size='lift',
+                color='lift',
+                hover_data=['antecedents', 'consequents'],
+                labels={'support': 'Frekuensi (Support)', 'confidence': 'Akurasi (Confidence)', 'lift': 'Lift Ratio'},
+                color_continuous_scale=px.colors.sequential.Plotly3
+            )
+            fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=30, b=0), height=450)
+            st.plotly_chart(fig, use_container_width=True)
 
-    with col_chart2:
-        with st.container():
-            st.subheader("🏆 Top 10 Kombinasi Terbaik")
-            if len(df_rules) > 0:
-                top_10 = df_rules.head(10).copy()
-                top_10['Aturan'] = top_10['antecedents'] + " ➔ " + top_10['consequents']
-                
-                fig2 = px.bar(
-                    top_10,
-                    x='lift',
-                    y='Aturan',
-                    orientation='h',
-                    color='confidence',
-                    color_continuous_scale=px.colors.sequential.Plotly3,
-                    labels={'lift': 'Nilai Lift Ratio', 'Aturan': ''}
-                )
-                fig2.update_layout(yaxis={'categoryorder':'total ascending'}, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=30, b=0))
-                st.plotly_chart(fig2, use_container_width=True)
+    st.markdown("<hr style='opacity: 0.2; margin: 40px 0;'>", unsafe_allow_html=True)
+
+    with st.container():
+        st.subheader("🏆 Top 10 Kombinasi Terbaik")
+        if len(df_rules) > 0:
+            top_10 = df_rules.head(10).copy()
+            top_10['Aturan'] = top_10['antecedents'] + " ➔ " + top_10['consequents']
+            
+            fig2 = px.bar(
+                top_10,
+                x='lift',
+                y='Aturan',
+                orientation='h',
+                color='confidence',
+                color_continuous_scale=px.colors.sequential.Plotly3,
+                labels={'lift': 'Nilai Lift Ratio', 'Aturan': ''}
+            )
+            fig2.update_layout(yaxis={'categoryorder':'total ascending'}, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=30, b=0), height=500)
+            st.plotly_chart(fig2, use_container_width=True)
 
 # ==============================================================================
 # HALAMAN 3: DATABASE ATURAN APRIORI
