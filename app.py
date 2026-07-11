@@ -176,6 +176,11 @@ st.markdown("""
         transform: translateY(-2px) !important;
         box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3) !important;
     }
+    # Teks Global Responsif (Opacity daripada abu-abu mati)
+    .text-muted {
+        color: var(--text-color);
+        opacity: 0.6;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -307,19 +312,16 @@ if menu_selection == "Kasir & Rekomendasi":
     col_main, col_spacer, col_sidebar = st.columns([2.5, 0.2, 1.5])
     
     with col_main:
-        st.markdown("""
-        <div class="glass-card">
-            <h2 style='margin-top:0;'>🏷️ Cari & Tambah Produk</h2>
-            <p style='color:#64748b; font-size:16px;'>Ketik nama produk untuk mencari lebih cepat.</p>
-        """, unsafe_allow_html=True)
-        
-        selected_product = st.selectbox("", ["-- Pilih Menu Untuk Ditambahkan --"] + all_products, label_visibility="collapsed")
-        
-        if selected_product != "-- Pilih Menu Untuk Ditambahkan --":
-            if st.button(f"➕ Tambahkan '{selected_product}' ke Keranjang", type="primary", use_container_width=True):
-                add_to_cart(selected_product)
-                st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+        with st.container():
+            st.markdown("<h3>🏷️ Cari & Tambah Produk</h3>", unsafe_allow_html=True)
+            st.markdown("<p class='text-muted' style='font-size:14px; margin-bottom:15px;'>Ketik nama produk untuk mencari lebih cepat.</p>", unsafe_allow_html=True)
+            
+            selected_product = st.selectbox("", ["-- Pilih Menu Untuk Ditambahkan --"] + all_products, label_visibility="collapsed")
+            
+            if selected_product != "-- Pilih Menu Untuk Ditambahkan --":
+                if st.button(f"➕ Tambahkan '{selected_product}' ke Keranjang", type="primary", use_container_width=True):
+                    add_to_cart(selected_product)
+                    st.rerun()
         
         # Area Rekomendasi Dinamis
         st.markdown("<h2 style='margin-top:30px; margin-bottom:20px;'>🔥 Rekomendasi Pintar (Cross-Selling)</h2>", unsafe_allow_html=True)
@@ -358,13 +360,15 @@ if menu_selection == "Kasir & Rekomendasi":
                 st.info("💡 Belum ada rekomendasi Cross-Selling yang cocok untuk menu di keranjang Anda.")
         else:
             # Jika kosong, tampilkan "Trending Items" untuk mengisi ruang kosong
-            st.markdown("""
-            <div class="glass-card" style="text-align:center; padding: 50px 30px;">
-                <h2 style="margin-bottom: 10px; font-weight:800;">Keranjang Masih Kosong</h2>
-                <p style="color:gray; font-size:18px; margin-bottom: 40px;">Sistem AI Apriori sedang menunggu pesanan Anda untuk memberikan rekomendasi cerdas (Cross-Selling).</p>
-                <div style="background: linear-gradient(90deg, transparent, rgba(128,128,128,0.3), transparent); height: 2px; width: 100%; margin-bottom: 35px;"></div>
-                <h4 style="font-weight:700; margin-bottom: 20px; letter-spacing:1px; color:#3b82f6;">🔥 MENU TERPOPULER HARI INI</h4>
-            """, unsafe_allow_html=True)
+            with st.container():
+                st.markdown("""
+                <div style="text-align:center; padding: 50px 30px;">
+                    <h2 style="margin-bottom: 10px; font-weight:800;">Keranjang Masih Kosong</h2>
+                    <p class="text-muted" style="font-size:18px; margin-bottom: 40px;">Sistem AI Apriori sedang menunggu pesanan Anda untuk memberikan rekomendasi cerdas (Cross-Selling).</p>
+                    <div style="background: linear-gradient(90deg, transparent, rgba(128,128,128,0.3), transparent); height: 2px; width: 100%; margin-bottom: 35px;"></div>
+                    <h4 style="font-weight:700; margin-bottom: 20px; letter-spacing:1px; color:#3b82f6;">🔥 MENU TERPOPULER HARI INI</h4>
+                </div>
+                """, unsafe_allow_html=True)
             
             top_trending = df_rules.sort_values(by='support', ascending=False)['antecedents'].unique()[:3]
             cols = st.columns(3)
@@ -381,26 +385,22 @@ if menu_selection == "Kasir & Rekomendasi":
                         border: 1px solid rgba(59, 130, 246, 0.3); 
                         box-shadow: 0 8px 20px rgba(59, 130, 246, 0.1);
                         text-align:center;
-                        transition: all 0.3s ease;
-                    ' onmouseover="this.style.transform='scale(1.05)'; this.style.borderColor='#3b82f6'; this.style.boxShadow='0 10px 30px rgba(59, 130, 246, 0.4)';" onmouseout="this.style.transform='scale(1)'; this.style.borderColor='rgba(59, 130, 246, 0.3)'; this.style.boxShadow='0 8px 20px rgba(59, 130, 246, 0.1)';">
+                    '>
                         <div style="font-size:30px; margin-bottom:10px;">🏆</div>
                         {trending}
                     </div>
                     """, unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
 
     with col_sidebar:
         # Panel Keranjang Belanja
-        st.markdown("""
-        <div class="glass-card" style="position: sticky; top: 20px;">
-            <h2 style='margin-top:0; color:#1e293b; border-bottom: 3px solid #3b82f6; padding-bottom: 15px;'>🛒 Keranjang</h2>
-        """, unsafe_allow_html=True)
+        with st.container():
+            st.markdown("<h2 style='margin-top:0; color:#1e293b; border-bottom: 3px solid #3b82f6; padding-bottom: 15px;'>🛒 Keranjang</h2>", unsafe_allow_html=True)
         
         if len(st.session_state.cart) == 0:
             st.markdown("""
-            <div style="text-align:center; padding: 60px 0; animation: floating 3s ease-in-out infinite;">
-                <div style="font-size: 70px; opacity: 0.3; margin-bottom: 15px;">🛒</div>
-                <p style="color:gray; font-weight: 600; font-size:18px;">Belum ada pesanan</p>
+            <div style="text-align:center; padding: 60px 0; opacity: 0.5;">
+                <div style="font-size: 70px; margin-bottom: 15px;">🛒</div>
+                <p style="font-weight: 600; font-size:18px;">Belum ada pesanan</p>
             </div>
             """, unsafe_allow_html=True)
         else:
@@ -422,92 +422,69 @@ if menu_selection == "Kasir & Rekomendasi":
             if st.button("🗑️ Kosongkan Keranjang", use_container_width=True):
                 clear_cart()
                 st.rerun()
-                
-        st.markdown("</div>", unsafe_allow_html=True)
 
 # ==============================================================================
 # HALAMAN 2: VISUALISASI DATA
 # ==============================================================================
 elif menu_selection == "Visualisasi Data":
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
     st.title("📈 Dashboard Analitik & Performa AI")
-    st.markdown("Analisis pola belanja pelanggan Anda secara visual.")
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("<p class='text-muted'>Analisis pola belanja pelanggan Anda secara visual.</p>", unsafe_allow_html=True)
     
     # Metrics
     m1, m2, m3 = st.columns(3)
     with m1:
-        st.markdown(f"""
-        <div class="glass-card" style="border-top: 5px solid #3b82f6; text-align:center;">
-            <h3 style='color:#64748b; margin:0;'>Total Menu</h3>
-            <h1 style='color:#1e293b; font-size:48px; margin:10px 0;'>{len(all_products)}</h1>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Total Menu", len(all_products))
     with m2:
-        st.markdown(f"""
-        <div class="glass-card" style="border-top: 5px solid #10b981; text-align:center;">
-            <h3 style='color:#64748b; margin:0;'>Pola Asosiasi Kuat</h3>
-            <h1 style='color:#1e293b; font-size:48px; margin:10px 0;'>{len(df_rules)}</h1>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Pola Asosiasi Kuat", len(df_rules))
     with m3:
-        st.markdown(f"""
-        <div class="glass-card" style="border-top: 5px solid #f59e0b; text-align:center;">
-            <h3 style='color:#64748b; margin:0;'>Akurasi Tertinggi</h3>
-            <h1 style='color:#1e293b; font-size:48px; margin:10px 0;'>{(df_rules['confidence'].max() * 100):.1f}%</h1>
-        </div>
-        """, unsafe_allow_html=True)
+        st.metric("Akurasi Tertinggi", f"{(df_rules['confidence'].max() * 100):.1f}%")
         
     st.markdown("<br>", unsafe_allow_html=True)
     
     col_chart1, col_chart2 = st.columns([1, 1])
     
     with col_chart1:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        st.subheader("📍 Peta Kekuatan Rekomendasi")
-        if len(df_rules) > 0:
-            fig = px.scatter(
-                df_rules, 
-                x='support', 
-                y='confidence', 
-                size='lift',
-                color='lift',
-                hover_data=['antecedents', 'consequents'],
-                labels={'support': 'Frekuensi (Support)', 'confidence': 'Akurasi (Confidence)', 'lift': 'Lift Ratio'},
-                color_continuous_scale=px.colors.sequential.Plotly3
-            )
-            fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=30, b=0))
-            st.plotly_chart(fig, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        with st.container():
+            st.subheader("📍 Peta Kekuatan Rekomendasi")
+            if len(df_rules) > 0:
+                fig = px.scatter(
+                    df_rules, 
+                    x='support', 
+                    y='confidence', 
+                    size='lift',
+                    color='lift',
+                    hover_data=['antecedents', 'consequents'],
+                    labels={'support': 'Frekuensi (Support)', 'confidence': 'Akurasi (Confidence)', 'lift': 'Lift Ratio'},
+                    color_continuous_scale=px.colors.sequential.Plotly3
+                )
+                fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=30, b=0))
+                st.plotly_chart(fig, use_container_width=True)
 
     with col_chart2:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        st.subheader("🏆 Top 10 Kombinasi Terbaik")
-        if len(df_rules) > 0:
-            top_10 = df_rules.head(10).copy()
-            top_10['Aturan'] = top_10['antecedents'] + " ➔ " + top_10['consequents']
-            
-            fig2 = px.bar(
-                top_10,
-                x='lift',
-                y='Aturan',
-                orientation='h',
-                color='confidence',
-                color_continuous_scale=px.colors.sequential.Plotly3,
-                labels={'lift': 'Nilai Lift Ratio', 'Aturan': ''}
-            )
-            fig2.update_layout(yaxis={'categoryorder':'total ascending'}, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=30, b=0))
-            st.plotly_chart(fig2, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        with st.container():
+            st.subheader("🏆 Top 10 Kombinasi Terbaik")
+            if len(df_rules) > 0:
+                top_10 = df_rules.head(10).copy()
+                top_10['Aturan'] = top_10['antecedents'] + " ➔ " + top_10['consequents']
+                
+                fig2 = px.bar(
+                    top_10,
+                    x='lift',
+                    y='Aturan',
+                    orientation='h',
+                    color='confidence',
+                    color_continuous_scale=px.colors.sequential.Plotly3,
+                    labels={'lift': 'Nilai Lift Ratio', 'Aturan': ''}
+                )
+                fig2.update_layout(yaxis={'categoryorder':'total ascending'}, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=30, b=0))
+                st.plotly_chart(fig2, use_container_width=True)
 
 # ==============================================================================
 # HALAMAN 3: DATABASE ATURAN APRIORI
 # ==============================================================================
 elif menu_selection == "Database Aturan":
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
     st.title("🗄️ Database Algoritma (Raw Data)")
-    st.markdown("Tabel di bawah ini menampilkan hasil komputasi *Machine Learning* Apriori dari dataset historis Anda.")
-    
+    st.markdown("<p class='text-muted'>Tabel di bawah ini menampilkan hasil komputasi <i>Machine Learning</i> Apriori dari dataset historis Anda.</p>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
     
     formatted_df = df_rules.copy()
@@ -527,4 +504,3 @@ elif menu_selection == "Database Aturan":
             "lift": "Lift Ratio"
         }
     )
-    st.markdown("</div>", unsafe_allow_html=True)
