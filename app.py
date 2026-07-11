@@ -28,12 +28,19 @@ st.markdown("""
     /* Global Typography */
     html, body, [class*="css"] {
         font-family: 'Outfit', sans-serif !important;
-        font-size: 18px !important; /* Font lebih besar agar tidak kosong */
+        font-size: 16px !important;
     }
     
     /* Background Elegan */
     .stApp {
-        background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+        background: #f8fafc;
+        background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
+    
+    /* Teks dan Heading Global untuk mencegah crash dengan Dark Mode */
+    h1, h2, h3, p, span, div {
+        color: #1e293b;
     }
     
     /* Menyembunyikan header bawaan Streamlit agar lebih bersih */
@@ -41,118 +48,109 @@ st.markdown("""
         background: transparent;
     }
     
-    /* Styling Sidebar agar mengambang dan transisi halus */
+    /* Styling Sidebar */
     [data-testid="stSidebar"] {
-        background-color: rgba(255, 255, 255, 0.95) !important;
-        backdrop-filter: blur(10px);
-        box-shadow: 4px 0 15px rgba(0,0,0,0.05);
-        border: none;
+        background-color: #ffffff !important;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.03);
+        border-right: 1px solid #f1f5f9;
     }
     
     /* Header/Hero Section Premium */
     .hero-banner {
-        background: linear-gradient(120deg, #1e3a8a 0%, #3b82f6 100%);
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
         padding: 40px;
-        border-radius: 20px;
-        color: white;
+        border-radius: 24px;
         text-align: center;
-        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        box-shadow: 0 15px 35px rgba(59, 130, 246, 0.2);
         margin-bottom: 40px;
-        position: relative;
-        overflow: hidden;
+        color: white !important;
     }
     .hero-title {
-        font-size: 42px;
+        font-size: 48px;
         font-weight: 800;
         margin-bottom: 10px;
-        letter-spacing: 1px;
+        color: white !important;
+        letter-spacing: -0.5px;
     }
     .hero-subtitle {
         font-size: 18px;
-        font-weight: 300;
-        opacity: 0.9;
+        font-weight: 400;
+        color: #e0e7ff !important;
     }
     
-    /* Card Styles dengan Glassmorphism */
+    /* Card Styles */
     .glass-card {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
+        background: #ffffff;
+        border: 1px solid #f1f5f9;
         border-radius: 20px;
         padding: 30px;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
         margin-bottom: 25px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    .glass-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1);
+    .glass-card h2, .glass-card h3 {
+        color: #0f172a !important;
+    }
+    .glass-card p {
+        color: #475569 !important;
     }
     
     /* Recommendation Item Card */
     .rec-item {
-        background: white;
-        border-radius: 15px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
         padding: 20px;
         margin-bottom: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         border-left: 6px solid #10b981;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        transition: all 0.3s ease;
+        transition: transform 0.2s;
     }
     .rec-item:hover {
-        border-left: 6px solid #059669;
-        transform: scale(1.02);
-        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1);
     }
     .rec-name {
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 800;
-        color: #1f2937;
+        color: #0f172a !important;
     }
     .rec-metrics {
         font-size: 14px;
-        color: #6b7280;
-        margin-top: 8px;
+        color: #64748b !important;
+        margin-top: 5px;
     }
     
     /* Cart Styling */
     .cart-item {
-        font-size: 18px;
-        padding: 12px 0;
-        border-bottom: 1px dashed #cbd5e1;
-        color: #334155;
+        font-size: 16px;
+        padding: 15px 0;
+        border-bottom: 1px solid #f1f5f9;
+        color: #1e293b !important;
         font-weight: 600;
     }
     
-    /* Kustomisasi Selectbox agar besar dan elegan */
+    /* Kustomisasi Selectbox */
     .stSelectbox > div > div {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
         border-radius: 12px !important;
         padding: 5px !important;
-        font-size: 18px !important;
         border: 2px solid #e2e8f0 !important;
-    }
-    .stSelectbox > div > div:focus-within {
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
     }
     
     /* Membesarkan Teks Sidebar */
     .stRadio p {
-        font-size: 20px !important;
+        font-size: 18px !important;
         font-weight: 600 !important;
-        padding: 8px 0;
+        color: #1e293b !important;
     }
     [data-testid="stSidebar"] h2 {
-        font-size: 32px !important;
-        font-weight: 800 !important;
-        margin-bottom: 20px !important;
+        color: #1e40af !important;
     }
     .stAlert p {
-        font-size: 16px !important;
+        color: #1e293b !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -321,17 +319,17 @@ if menu == "🛍️ Kasir & Rekomendasi":
             # Jika kosong, tampilkan "Trending Items" untuk mengisi ruang kosong
             st.markdown("""
             <div class="glass-card" style="text-align:center; padding: 40px;">
-                <h3 style="color:#94a3b8;">Keranjang Masih Kosong</h3>
-                <p style="color:#94a3b8;">Rekomendasi otomatis akan muncul di sini setelah Anda menambahkan produk.</p>
-                <hr style="opacity:0.2;">
-                <p style="color:#64748b; font-weight:bold;">Menu Terpopuler Hari Ini (Top Support):</p>
+                <h3 style="color:#64748b !important; margin-bottom: 10px;">Keranjang Masih Kosong</h3>
+                <p style="color:#94a3b8 !important; margin-bottom: 30px;">Rekomendasi otomatis (Cross-Selling) akan muncul di sini setelah Anda menambahkan menu ke keranjang.</p>
+                <div style="background: #f1f5f9; height: 1px; width: 100%; margin-bottom: 25px;"></div>
+                <p style="color:#334155 !important; font-weight:700; margin-bottom: 15px;">🌟 Menu Terpopuler Hari Ini:</p>
             """, unsafe_allow_html=True)
             
             top_trending = df_rules.sort_values(by='support', ascending=False)['antecedents'].unique()[:3]
             cols = st.columns(3)
             for i, trending in enumerate(top_trending):
                 with cols[i]:
-                    st.markdown(f"<div style='background:#f1f5f9; padding:15px; border-radius:10px; font-weight:bold; color:#3b82f6;'>☕ {trending}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='background:white; padding:15px; border-radius:12px; font-weight:600; color:#2563eb; border: 1px solid #bfdbfe; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.05);'>🏆 {trending}</div>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
     with col_sidebar:
@@ -343,9 +341,9 @@ if menu == "🛍️ Kasir & Rekomendasi":
         
         if len(st.session_state.cart) == 0:
             st.markdown("""
-            <div style="text-align:center; padding: 30px 0; opacity: 0.5;">
-                <img src="https://cdn-icons-png.flaticon.com/512/102/102661.png" width="60">
-                <p style="margin-top:15px;">Belum ada pesanan</p>
+            <div style="text-align:center; padding: 40px 0;">
+                <div style="font-size: 50px; opacity: 0.2; margin-bottom: 10px;">🛒</div>
+                <p style="color:#94a3b8 !important; font-weight: 500;">Belum ada pesanan</p>
             </div>
             """, unsafe_allow_html=True)
         else:
