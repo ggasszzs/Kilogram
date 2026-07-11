@@ -20,7 +20,7 @@ def add_to_cart(product):
 def clear_cart():
     st.session_state.cart = []
 
-# --- CSS PREMIUM & ELEGAN ---
+# --- CSS RESPONSIVE (Support Light & Dark Mode) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
@@ -31,28 +31,9 @@ st.markdown("""
         font-size: 16px !important;
     }
     
-    /* Background Elegan */
-    .stApp {
-        background: #f8fafc;
-        background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
-        background-size: 20px 20px;
-    }
-    
-    /* Teks dan Heading Global untuk mencegah crash dengan Dark Mode */
-    h1, h2, h3, p, span, div {
-        color: #1e293b;
-    }
-    
     /* Menyembunyikan header bawaan Streamlit agar lebih bersih */
     header[data-testid="stHeader"] {
         background: transparent;
-    }
-    
-    /* Styling Sidebar */
-    [data-testid="stSidebar"] {
-        background-color: #ffffff !important;
-        box-shadow: 4px 0 15px rgba(0,0,0,0.03);
-        border-right: 1px solid #f1f5f9;
     }
     
     /* Header/Hero Section Premium */
@@ -63,13 +44,12 @@ st.markdown("""
         text-align: center;
         box-shadow: 0 15px 35px rgba(59, 130, 246, 0.2);
         margin-bottom: 40px;
-        color: white !important;
     }
     .hero-title {
         font-size: 48px;
         font-weight: 800;
         margin-bottom: 10px;
-        color: white !important;
+        color: #ffffff !important;
         letter-spacing: -0.5px;
     }
     .hero-subtitle {
@@ -78,26 +58,20 @@ st.markdown("""
         color: #e0e7ff !important;
     }
     
-    /* Card Styles */
+    /* Card Styles (Mengikuti Tema Streamlit) */
     .glass-card {
-        background: #ffffff;
-        border: 1px solid #f1f5f9;
+        background-color: var(--secondary-background-color);
+        border: 1px solid rgba(128,128,128,0.1);
         border-radius: 20px;
         padding: 30px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         margin-bottom: 25px;
-    }
-    .glass-card h2, .glass-card h3 {
-        color: #0f172a !important;
-    }
-    .glass-card p {
-        color: #475569 !important;
     }
     
     /* Recommendation Item Card */
     .rec-item {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
+        background-color: var(--background-color);
+        border: 1px solid rgba(128,128,128,0.2);
         border-radius: 16px;
         padding: 20px;
         margin-bottom: 15px;
@@ -114,11 +88,11 @@ st.markdown("""
     .rec-name {
         font-size: 18px;
         font-weight: 800;
-        color: #0f172a !important;
+        color: var(--text-color);
     }
     .rec-metrics {
         font-size: 14px;
-        color: #64748b !important;
+        color: gray;
         margin-top: 5px;
     }
     
@@ -126,31 +100,15 @@ st.markdown("""
     .cart-item {
         font-size: 16px;
         padding: 15px 0;
-        border-bottom: 1px solid #f1f5f9;
-        color: #1e293b !important;
+        border-bottom: 1px solid rgba(128,128,128,0.2);
         font-weight: 600;
     }
     
     /* Kustomisasi Selectbox */
     .stSelectbox > div > div {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
         border-radius: 12px !important;
         padding: 5px !important;
-        border: 2px solid #e2e8f0 !important;
-    }
-    
-    /* Membesarkan Teks Sidebar */
-    .stRadio p {
-        font-size: 18px !important;
-        font-weight: 600 !important;
-        color: #1e293b !important;
-    }
-    [data-testid="stSidebar"] h2 {
-        color: #1e40af !important;
-    }
-    .stAlert p {
-        color: #1e293b !important;
+        border: 2px solid rgba(128,128,128,0.2) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -226,19 +184,34 @@ except Exception as e:
     st.error(f"Gagal memuat dataset: {e}")
     st.stop()
 
-# --- SIDEBAR NAVIGATION ---
-st.sidebar.markdown("<br>", unsafe_allow_html=True)
-col_img1, col_img2, col_img3 = st.sidebar.columns([1,2,1])
-with col_img2:
-    st.image("https://cdn-icons-png.flaticon.com/512/3081/3081840.png", use_container_width=True)
-st.sidebar.markdown("<h2 style='text-align:center; color:#1e3a8a;'>Kilo POS</h2>", unsafe_allow_html=True)
-st.sidebar.markdown("<p style='text-align:center; color:#64748b; margin-top:-15px; margin-bottom:30px;'>Sistem Kasir Pintar AI</p>", unsafe_allow_html=True)
+# --- SIDEBAR INTERAKTIF ---
+with st.sidebar:
+    st.image("https://cdn-icons-png.flaticon.com/512/3081/3081986.png", width=60)
+    st.markdown("<h3>Kilo POS</h3><p style='color:gray; font-size:12px; margin-top:-10px;'>Sistem Kasir Pintar AI</p>", unsafe_allow_html=True)
+    st.markdown("---")
+    
+    try:
+        from streamlit_option_menu import option_menu
+        menu_selection = option_menu(
+            menu_title=None,
+            options=["Kasir & Rekomendasi", "Visualisasi Data", "Database Aturan"],
+            icons=['cart-plus-fill', 'pie-chart-fill', 'database-fill-gear'],
+            menu_icon="cast",
+            default_index=0,
+            styles={
+                "container": {"padding": "0!important", "background-color": "transparent"},
+                "icon": {"color": "#3b82f6", "font-size": "20px"},
+                "nav-link": {"font-size": "16px", "text-align": "left", "margin":"5px", "font-weight":"600"},
+                "nav-link-selected": {"background-color": "#3b82f6", "color": "white"},
+            }
+        )
+    except ImportError:
+        menu_selection = st.radio(
+            "Menu Utama",
+            options=["Kasir & Rekomendasi", "Visualisasi Data", "Database Aturan"],
+            label_visibility="collapsed"
+        )
 
-menu = st.sidebar.radio(
-    "",
-    ["🛍️ Kasir & Rekomendasi", "📈 Visualisasi Data", "🗄️ Database Aturan"]
-)
-st.sidebar.markdown("---")
 
 # Mengisi ruang kosong di Sidebar
 st.sidebar.markdown("### 👤 Info Profil")
@@ -259,8 +232,10 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- PAGE 1: KASIR & REKOMENDASI INTERAKTIF ---
-if menu == "🛍️ Kasir & Rekomendasi":
+# ==============================================================================
+# HALAMAN 1: KASIR & REKOMENDASI CROSS-SELLING
+# ==============================================================================
+if menu_selection == "Kasir & Rekomendasi":
     
     # Layout Utama
     col_main, col_spacer, col_sidebar = st.columns([2.5, 0.2, 1.5])
@@ -319,17 +294,17 @@ if menu == "🛍️ Kasir & Rekomendasi":
             # Jika kosong, tampilkan "Trending Items" untuk mengisi ruang kosong
             st.markdown("""
             <div class="glass-card" style="text-align:center; padding: 40px;">
-                <h3 style="color:#64748b !important; margin-bottom: 10px;">Keranjang Masih Kosong</h3>
-                <p style="color:#94a3b8 !important; margin-bottom: 30px;">Rekomendasi otomatis (Cross-Selling) akan muncul di sini setelah Anda menambahkan menu ke keranjang.</p>
-                <div style="background: #f1f5f9; height: 1px; width: 100%; margin-bottom: 25px;"></div>
-                <p style="color:#334155 !important; font-weight:700; margin-bottom: 15px;">🌟 Menu Terpopuler Hari Ini:</p>
+                <h3 style="margin-bottom: 10px;">Keranjang Masih Kosong</h3>
+                <p style="color:gray; margin-bottom: 30px;">Rekomendasi otomatis (Cross-Selling) akan muncul di sini setelah Anda menambahkan menu ke keranjang.</p>
+                <div style="background: rgba(128,128,128,0.2); height: 1px; width: 100%; margin-bottom: 25px;"></div>
+                <p style="font-weight:700; margin-bottom: 15px;">🌟 Menu Terpopuler Hari Ini:</p>
             """, unsafe_allow_html=True)
             
             top_trending = df_rules.sort_values(by='support', ascending=False)['antecedents'].unique()[:3]
             cols = st.columns(3)
             for i, trending in enumerate(top_trending):
                 with cols[i]:
-                    st.markdown(f"<div style='background:white; padding:15px; border-radius:12px; font-weight:600; color:#2563eb; border: 1px solid #bfdbfe; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.05);'>🏆 {trending}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='background:rgba(59, 130, 246, 0.1); padding:15px; border-radius:12px; font-weight:600; color:#3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 4px 6px rgba(0,0,0, 0.02);'>🏆 {trending}</div>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
     with col_sidebar:
@@ -343,7 +318,7 @@ if menu == "🛍️ Kasir & Rekomendasi":
             st.markdown("""
             <div style="text-align:center; padding: 40px 0;">
                 <div style="font-size: 50px; opacity: 0.2; margin-bottom: 10px;">🛒</div>
-                <p style="color:#94a3b8 !important; font-weight: 500;">Belum ada pesanan</p>
+                <p style="color:gray; font-weight: 500;">Belum ada pesanan</p>
             </div>
             """, unsafe_allow_html=True)
         else:
@@ -368,8 +343,10 @@ if menu == "🛍️ Kasir & Rekomendasi":
                 
         st.markdown("</div>", unsafe_allow_html=True)
 
-# --- PAGE 2: VISUALISASI DATA ---
-elif menu == "📈 Visualisasi Data":
+# ==============================================================================
+# HALAMAN 2: VISUALISASI DATA
+# ==============================================================================
+elif menu_selection == "Visualisasi Data":
     st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
     st.title("📈 Dashboard Analitik & Performa AI")
     st.markdown("Analisis pola belanja pelanggan Anda secara visual.")
@@ -441,8 +418,10 @@ elif menu == "📈 Visualisasi Data":
             st.plotly_chart(fig2, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-# --- PAGE 3: DATABASE ATURAN ---
-elif menu == "🗄️ Database Aturan":
+# ==============================================================================
+# HALAMAN 3: DATABASE ATURAN APRIORI
+# ==============================================================================
+elif menu_selection == "Database Aturan":
     st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
     st.title("🗄️ Database Algoritma (Raw Data)")
     st.markdown("Tabel di bawah ini menampilkan hasil komputasi *Machine Learning* Apriori dari dataset historis Anda.")
