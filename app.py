@@ -20,95 +20,161 @@ def add_to_cart(product):
 def clear_cart():
     st.session_state.cart = []
 
-# --- CSS RESPONSIVE (Support Light & Dark Mode) ---
+# --- CSS "WOW" (Premium, Dinamis & Elegan) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
     
-    /* Global Typography */
     html, body, [class*="css"] {
         font-family: 'Outfit', sans-serif !important;
-        font-size: 16px !important;
     }
     
     /* Menyembunyikan header bawaan Streamlit agar lebih bersih */
     header[data-testid="stHeader"] {
-        background: transparent;
+        background: transparent !important;
+    }
+    
+    /* Animasi Mengambang (Floating) */
+    @keyframes floating {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+    }
+    
+    /* Animasi Cahaya (Glow) */
+    @keyframes glow {
+        0% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+        50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.8), 0 0 10px rgba(139, 92, 246, 0.5); }
+        100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
     }
     
     /* Header/Hero Section Premium */
     .hero-banner {
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-        padding: 40px;
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #8b5cf6 100%);
+        padding: 50px 30px;
         border-radius: 24px;
         text-align: center;
-        box-shadow: 0 15px 35px rgba(59, 130, 246, 0.2);
+        box-shadow: 0 15px 35px rgba(59, 130, 246, 0.3);
         margin-bottom: 40px;
+        color: white !important;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
+    /* Aksen cahaya di belakang banner */
+    .hero-banner::before {
+        content: '';
+        position: absolute;
+        top: -50%; left: -50%;
+        width: 200%; height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+        animation: spin 15s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    
     .hero-title {
-        font-size: 48px;
+        font-size: 56px;
         font-weight: 800;
         margin-bottom: 10px;
         color: #ffffff !important;
-        letter-spacing: -0.5px;
+        letter-spacing: -1px;
+        text-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        position: relative;
+        z-index: 1;
     }
     .hero-subtitle {
-        font-size: 18px;
-        font-weight: 400;
-        color: #e0e7ff !important;
+        font-size: 20px;
+        font-weight: 300;
+        color: rgba(255,255,255,0.9) !important;
+        position: relative;
+        z-index: 1;
     }
     
-    /* Card Styles (Mengikuti Tema Streamlit) */
+    /* Card Styles Transparan Super Premium */
     .glass-card {
-        background-color: var(--secondary-background-color);
-        border: 1px solid rgba(128,128,128,0.1);
-        border-radius: 20px;
-        padding: 30px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        margin-bottom: 25px;
+        background: var(--secondary-background-color);
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        border-radius: 24px;
+        padding: 35px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        backdrop-filter: blur(10px);
+    }
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 50px rgba(59, 130, 246, 0.15);
+        border: 1px solid rgba(59, 130, 246, 0.4);
     }
     
     /* Recommendation Item Card */
     .rec-item {
-        background-color: var(--background-color);
-        border: 1px solid rgba(128,128,128,0.2);
+        background: linear-gradient(145deg, var(--secondary-background-color) 0%, var(--background-color) 100%);
+        border: 1px solid rgba(128,128,128,0.15);
         border-radius: 16px;
-        padding: 20px;
+        padding: 22px;
         margin-bottom: 15px;
         border-left: 6px solid #10b981;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        transition: transform 0.2s;
+        transition: all 0.3s ease;
     }
     .rec-item:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1);
+        transform: scale(1.02) translateX(5px);
+        border-left: 6px solid #059669;
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2);
     }
     .rec-name {
-        font-size: 18px;
+        font-size: 20px;
         font-weight: 800;
         color: var(--text-color);
     }
     .rec-metrics {
         font-size: 14px;
-        color: gray;
-        margin-top: 5px;
+        color: #888;
+        margin-top: 6px;
+        font-weight: 500;
     }
     
     /* Cart Styling */
     .cart-item {
-        font-size: 16px;
-        padding: 15px 0;
-        border-bottom: 1px solid rgba(128,128,128,0.2);
+        font-size: 17px;
+        padding: 16px 0;
+        border-bottom: 1px dashed rgba(128,128,128,0.3);
         font-weight: 600;
+        transition: background 0.3s ease;
+    }
+    .cart-item:hover {
+        background: rgba(128,128,128,0.05);
+        border-radius: 8px;
+        padding: 16px 10px;
     }
     
-    /* Kustomisasi Selectbox */
+    /* Kustomisasi Selectbox / Dropdown */
     .stSelectbox > div > div {
-        border-radius: 12px !important;
-        padding: 5px !important;
+        border-radius: 16px !important;
+        padding: 8px !important;
         border: 2px solid rgba(128,128,128,0.2) !important;
+        background-color: var(--secondary-background-color) !important;
+        font-size: 18px !important;
+        transition: all 0.3s ease;
+    }
+    .stSelectbox > div > div:focus-within {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
+    }
+    
+    /* Tombol Utama (Button) */
+    .stButton > button {
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.5px !important;
+        transition: all 0.3s ease !important;
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -293,18 +359,34 @@ if menu_selection == "Kasir & Rekomendasi":
         else:
             # Jika kosong, tampilkan "Trending Items" untuk mengisi ruang kosong
             st.markdown("""
-            <div class="glass-card" style="text-align:center; padding: 40px;">
-                <h3 style="margin-bottom: 10px;">Keranjang Masih Kosong</h3>
-                <p style="color:gray; margin-bottom: 30px;">Rekomendasi otomatis (Cross-Selling) akan muncul di sini setelah Anda menambahkan menu ke keranjang.</p>
-                <div style="background: rgba(128,128,128,0.2); height: 1px; width: 100%; margin-bottom: 25px;"></div>
-                <p style="font-weight:700; margin-bottom: 15px;">🌟 Menu Terpopuler Hari Ini:</p>
+            <div class="glass-card" style="text-align:center; padding: 50px 30px;">
+                <h2 style="margin-bottom: 10px; font-weight:800;">Keranjang Masih Kosong</h2>
+                <p style="color:gray; font-size:18px; margin-bottom: 40px;">Sistem AI Apriori sedang menunggu pesanan Anda untuk memberikan rekomendasi cerdas (Cross-Selling).</p>
+                <div style="background: linear-gradient(90deg, transparent, rgba(128,128,128,0.3), transparent); height: 2px; width: 100%; margin-bottom: 35px;"></div>
+                <h4 style="font-weight:700; margin-bottom: 20px; letter-spacing:1px; color:#3b82f6;">🔥 MENU TERPOPULER HARI INI</h4>
             """, unsafe_allow_html=True)
             
             top_trending = df_rules.sort_values(by='support', ascending=False)['antecedents'].unique()[:3]
             cols = st.columns(3)
             for i, trending in enumerate(top_trending):
                 with cols[i]:
-                    st.markdown(f"<div style='background:rgba(59, 130, 246, 0.1); padding:15px; border-radius:12px; font-weight:600; color:#3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 4px 6px rgba(0,0,0, 0.02);'>🏆 {trending}</div>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div style='
+                        background: linear-gradient(145deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.15) 100%); 
+                        padding:25px 15px; 
+                        border-radius:20px; 
+                        font-weight:700; 
+                        font-size:18px;
+                        color:var(--text-color); 
+                        border: 1px solid rgba(59, 130, 246, 0.3); 
+                        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.1);
+                        text-align:center;
+                        transition: all 0.3s ease;
+                    ' onmouseover="this.style.transform='scale(1.05)'; this.style.borderColor='#3b82f6'; this.style.boxShadow='0 10px 30px rgba(59, 130, 246, 0.4)';" onmouseout="this.style.transform='scale(1)'; this.style.borderColor='rgba(59, 130, 246, 0.3)'; this.style.boxShadow='0 8px 20px rgba(59, 130, 246, 0.1)';">
+                        <div style="font-size:30px; margin-bottom:10px;">🏆</div>
+                        {trending}
+                    </div>
+                    """, unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
     with col_sidebar:
@@ -316,9 +398,9 @@ if menu_selection == "Kasir & Rekomendasi":
         
         if len(st.session_state.cart) == 0:
             st.markdown("""
-            <div style="text-align:center; padding: 40px 0;">
-                <div style="font-size: 50px; opacity: 0.2; margin-bottom: 10px;">🛒</div>
-                <p style="color:gray; font-weight: 500;">Belum ada pesanan</p>
+            <div style="text-align:center; padding: 60px 0; animation: floating 3s ease-in-out infinite;">
+                <div style="font-size: 70px; opacity: 0.3; margin-bottom: 15px;">🛒</div>
+                <p style="color:gray; font-weight: 600; font-size:18px;">Belum ada pesanan</p>
             </div>
             """, unsafe_allow_html=True)
         else:
