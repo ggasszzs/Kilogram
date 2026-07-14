@@ -483,7 +483,7 @@ elif menu_selection == "Visualisasi Data":
             # Tambahkan outline putih pada text agar terbaca di mode gelap maupun terang
             import matplotlib.patheffects as PathEffects
             texts = nx.draw_networkx_labels(
-                G, pos, font_size=12, font_weight="bold", ax=ax
+                G, pos, font_size=15, font_weight="bold", ax=ax
             )
             for _, t in texts.items():
                 t.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="white")])
@@ -491,15 +491,15 @@ elif menu_selection == "Visualisasi Data":
             # Edge + Panah
             if len(G.edges()) > 0:
                 nx.draw_networkx_edges(
-                    G, pos, width=edge_widths, edge_color="gray", arrows=True,
-                    arrowsize=25, arrowstyle="-|>", connectionstyle="arc3,rad=0.08",
+                    G, pos, width=edge_widths, edge_color="lightgrey", arrows=True,
+                    arrowsize=30, arrowstyle="-|>", connectionstyle="arc3,rad=0.08",
                     node_size=node_sizes, min_source_margin=15, min_target_margin=25, ax=ax
                 )
 
                 # Label Lift
                 edge_labels = {(u, v): f"{G[u][v]['lift']:.2f}" for u, v in G.edges()}
                 edge_texts = nx.draw_networkx_edge_labels(
-                    G, pos, edge_labels=edge_labels, font_size=10, font_color="red",
+                    G, pos, edge_labels=edge_labels, font_size=15, font_color="red",
                     font_weight="bold", rotate=True, label_pos=0.35,
                     horizontalalignment='center', verticalalignment='center', ax=ax
                 )
