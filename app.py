@@ -445,14 +445,23 @@ elif menu_selection == "Visualisasi Data":
             # Gunakan rules yang kuat (Top 30) agar grafiknya tidak terlalu ruwet
             top_rules = df_rules.sort_values(by='lift', ascending=False).head(30)
             
-            G = nx.Graph()
+            # Menggunakan DiGraph (Directed Graph) seperti di Colab
+            G = nx.DiGraph()
             for _, row in top_rules.iterrows():
+                # Menggunakan lift sebagai bobot
                 G.add_edge(row['antecedents'], row['consequents'], weight=row['lift'])
                 
-            pos = nx.spring_layout(G, k=0.8, iterations=50)
+            # Menggunakan tata letak melingkar (circular_layout) agar rapi seperti Colab
+            pos = nx.circular_layout(G)
             
+            # Normalisasi ketebalan garis (Edge)
             edge_x = []
             edge_y = []
+            min_lift = min([G[u][v]['weight'] for u, v in G.edges()]) if len(G.edges()) > 0 else 1
+            
+            # Di Plotly, kita tidak bisa dengan mudah memberi ketebalan berbeda per garis dalam 1 trace Scatter.
+            # Namun kita bisa membuat multiple traces jika ingin ketebalan berbeda, 
+            # atau cukup gunakan warna/ketebalan standar yang menyesuaikan tema.
             for edge in G.edges():
                 x0, y0 = pos[edge[0]]
                 x1, y1 = pos[edge[1]]
@@ -461,7 +470,7 @@ elif menu_selection == "Visualisasi Data":
 
             edge_trace = go.Scatter(
                 x=edge_x, y=edge_y,
-                line=dict(width=1.5, color='rgba(150, 150, 150, 0.4)'),
+                line=dict(width=2, color='rgba(150, 150, 150, 0.5)'),
                 hoverinfo='none',
                 mode='lines')
 
