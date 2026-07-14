@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+import networkx as nx
 from mlxtend.frequent_patterns import apriori, association_rules
 import os
 import time
@@ -27,11 +29,6 @@ st.markdown("""
     
     html, body, [class*="css"] {
         font-family: 'Outfit', sans-serif !important;
-    }
-    
-    /* Menyembunyikan header bawaan Streamlit agar lebih bersih */
-    header[data-testid="stHeader"] {
-        background: transparent !important;
     }
     
     /* Animasi Mengambang (Floating) */
@@ -442,40 +439,78 @@ elif menu_selection == "Visualisasi Data":
     st.markdown("<br>", unsafe_allow_html=True)
     
     with st.container():
-        st.subheader("📍 Peta Kekuatan Rekomendasi")
+        st.subheader("🌐 Jaringan Koneksi Menu (Network Graph)")
+        st.markdown("<p class='text-muted'>Peta ini menunjukkan bagaimana menu-menu di restoran Anda saling terhubung berdasarkan data penjualan. Semakin tebal garisnya, semakin kuat rekomendasinya.</p>", unsafe_allow_html=True)
         if len(df_rules) > 0:
-            fig = px.scatter(
-                df_rules, 
-                x='support', 
-                y='confidence', 
-                size='lift',
-                color='lift',
-                hover_data=['antecedents', 'consequents'],
-                labels={'support': 'Frekuensi (Support)', 'confidence': 'Akurasi (Confidence)', 'lift': 'Lift Ratio'},
-                color_continuous_scale=px.colors.sequential.Plotly3
-            )
-            fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=30, b=0), height=450)
-            st.plotly_chart(fig, use_container_width=True)
-
-    st.markdown("<hr style='opacity: 0.2; margin: 40px 0;'>", unsafe_allow_html=True)
-
-    with st.container():
-        st.subheader("🏆 Top 10 Kombinasi Terbaik")
-        if len(df_rules) > 0:
-            top_10 = df_rules.head(10).copy()
-            top_10['Aturan'] = top_10['antecedents'] + " ➔ " + top_10['consequents']
+            # Gunakan rules yang kuat (Top 30) agar grafiknya tidak terlalu ruwet
+            top_rules = df_rules.sort_values(by='lift', ascending=False).head(30)
             
-            fig2 = px.bar(
-                top_10,
-                x='lift',
-                y='Aturan',
-                orientation='h',
-                color='confidence',
-                color_continuous_scale=px.colors.sequential.Plotly3,
-                labels={'lift': 'Nilai Lift Ratio', 'Aturan': ''}
-            )
-            fig2.update_layout(yaxis={'categoryorder':'total ascending'}, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=30, b=0), height=500)
-            st.plotly_chart(fig2, use_container_width=True)
+            G = nx.Graph()
+            for _, row in top_rules.iterrows():
+                G.add_edge(row['antecedents'], row['consequents'], weight=row['lift'])
+                
+            pos = nx.spring_layout(G, k=0.8, iterations=50)
+            
+            edge_x = []
+            edge_y = []
+            for edge in G.edges():
+                x0, y0 = pos[edge[0]]
+                x1, y1 = pos[edge[1]]
+                edge_x.extend([x0, x1, None])
+                edge_y.extend([y0, y1, None])
+
+            edge_trace = go.Scatter(
+                x=edge_x, y=edge_y,
+                line=dict(width=1.5, color='rgba(150, 150, 150, 0.4)'),
+                hoverinfo='none',
+                mode='lines')
+
+            node_x = []
+            node_y = []
+            for node in G.nodes():
+                x, y = pos[node]
+                node_x.append(x)
+                node_y.append(y)
+
+            node_adjacencies = []
+            node_text = []
+            for node, adjacencies in enumerate(G.adjacency()):
+                node_adjacencies.append(len(adjacencies[1]))
+                node_text.append(f"<b>{adjacencies[0]}</b><br>Terhubung dengan {len(adjacencies[1])} menu lain")
+
+            node_trace = go.Scatter(
+                x=node_x, y=node_y,
+                mode='markers+text',
+                text=[adj[0] for adj in G.adjacency()],
+                textposition="bottom center",
+                hoverinfo='text',
+                hovertext=node_text,
+                marker=dict(
+                    showscale=True,
+                    colorscale='YlGnBu',
+                    reversescale=True,
+                    color=node_adjacencies,
+                    size=35,
+                    colorbar=dict(
+                        thickness=15,
+                        title='Kekuatan Hubungan',
+                        xanchor='left',
+                        titleside='right'
+                    ),
+                    line=dict(color='white', width=2)))
+
+            fig = go.Figure(data=[edge_trace, node_trace],
+                         layout=go.Layout(
+                            showlegend=False,
+                            hovermode='closest',
+                            margin=dict(b=20,l=5,r=5,t=40),
+                            plot_bgcolor="rgba(0,0,0,0)",
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
+                            )
+            fig.update_layout(height=650)
+            st.plotly_chart(fig, use_container_width=True)
 
 # ==============================================================================
 # HALAMAN 3: DATABASE ATURAN APRIORI
