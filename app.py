@@ -493,9 +493,7 @@ elif menu_selection == "Visualisasi Data":
                     size=35,
                     colorbar=dict(
                         thickness=15,
-                        title='Kekuatan Hubungan',
-                        xanchor='left',
-                        titleside='right'
+                        title='Kekuatan Hubungan'
                     ),
                     line=dict(color='white', width=2)))
 
