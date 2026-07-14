@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import networkx as nx
+import matplotlib.pyplot as plt
 from mlxtend.frequent_patterns import apriori, association_rules
 import os
 import time
@@ -440,84 +441,75 @@ elif menu_selection == "Visualisasi Data":
     
     with st.container():
         st.subheader("🌐 Jaringan Koneksi Menu (Network Graph)")
-        st.markdown("<p class='text-muted'>Peta ini menunjukkan bagaimana menu-menu di restoran Anda saling terhubung berdasarkan data penjualan. Semakin tebal garisnya, semakin kuat rekomendasinya.</p>", unsafe_allow_html=True)
+        st.markdown("<p class='text-muted'>Peta ini menunjukkan bagaimana menu-menu di restoran Anda saling terhubung berdasarkan data penjualan. Panah menunjukkan arah rekomendasi.</p>", unsafe_allow_html=True)
         if len(df_rules) > 0:
             # Gunakan rules yang kuat (Top 30) agar grafiknya tidak terlalu ruwet
             top_rules = df_rules.sort_values(by='lift', ascending=False).head(30)
             
-            # Menggunakan DiGraph (Directed Graph) seperti di Colab
+            # MEMBUAT DIRECTED GRAPH
             G = nx.DiGraph()
+
+            # Tambahkan node dan edge
             for _, row in top_rules.iterrows():
-                # Menggunakan lift sebagai bobot
-                G.add_edge(row['antecedents'], row['consequents'], weight=row['lift'])
-                
-            # Menggunakan tata letak melingkar (circular_layout) agar rapi seperti Colab
+                G.add_edge(row['antecedents'], row['consequents'], lift=row['lift'])
+
+            # LAYOUT
             pos = nx.circular_layout(G)
-            
-            # Normalisasi ketebalan garis (Edge)
-            edge_x = []
-            edge_y = []
-            min_lift = min([G[u][v]['weight'] for u, v in G.edges()]) if len(G.edges()) > 0 else 1
-            
-            # Di Plotly, kita tidak bisa dengan mudah memberi ketebalan berbeda per garis dalam 1 trace Scatter.
-            # Namun kita bisa membuat multiple traces jika ingin ketebalan berbeda, 
-            # atau cukup gunakan warna/ketebalan standar yang menyesuaikan tema.
-            for edge in G.edges():
-                x0, y0 = pos[edge[0]]
-                x1, y1 = pos[edge[1]]
-                edge_x.extend([x0, x1, None])
-                edge_y.extend([y0, y1, None])
 
-            edge_trace = go.Scatter(
-                x=edge_x, y=edge_y,
-                line=dict(width=2, color='rgba(150, 150, 150, 0.5)'),
-                hoverinfo='none',
-                mode='lines')
-
-            node_x = []
-            node_y = []
+            # UKURAN NODE BERDASARKAN DEGREE
+            node_sizes = []
             for node in G.nodes():
-                x, y = pos[node]
-                node_x.append(x)
-                node_y.append(y)
+                degree = G.degree(node)
+                node_sizes.append(1500 + degree * 300)
 
-            node_adjacencies = []
-            node_text = []
-            for node, adjacencies in enumerate(G.adjacency()):
-                node_adjacencies.append(len(adjacencies[1]))
-                node_text.append(f"<b>{adjacencies[0]}</b><br>Terhubung dengan {len(adjacencies[1])} menu lain")
+            # KETEBALAN GARIS BERDASARKAN LIFT
+            edge_widths = []
+            if len(G.edges()) > 0:
+                min_lift = min([G[u][v]['lift'] for u, v in G.edges()])
+                for u, v in G.edges():
+                    width = ((G[u][v]['lift'] - min_lift) * 6) + 1.5
+                    edge_widths.append(width)
 
-            node_trace = go.Scatter(
-                x=node_x, y=node_y,
-                mode='markers+text',
-                text=[adj[0] for adj in G.adjacency()],
-                textposition="bottom center",
-                hoverinfo='text',
-                hovertext=node_text,
-                marker=dict(
-                    showscale=True,
-                    colorscale='YlGnBu',
-                    reversescale=True,
-                    color=node_adjacencies,
-                    size=35,
-                    colorbar=dict(
-                        thickness=15,
-                        title='Kekuatan Hubungan'
-                    ),
-                    line=dict(color='white', width=2)))
+            # GAMBAR GRAPH
+            fig, ax = plt.subplots(figsize=(12, 10))
 
-            fig = go.Figure(data=[edge_trace, node_trace],
-                         layout=go.Layout(
-                            showlegend=False,
-                            hovermode='closest',
-                            margin=dict(b=20,l=5,r=5,t=40),
-                            plot_bgcolor="rgba(0,0,0,0)",
-                            paper_bgcolor="rgba(0,0,0,0)",
-                            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
-                            )
-            fig.update_layout(height=650)
-            st.plotly_chart(fig, use_container_width=True)
+            # Node
+            nx.draw_networkx_nodes(
+                G, pos, node_size=node_sizes, node_color="pink",
+                edgecolors="black", linewidths=1.5, ax=ax
+            )
+
+            # Label Node
+            # Tambahkan outline putih pada text agar terbaca di mode gelap maupun terang
+            import matplotlib.patheffects as PathEffects
+            texts = nx.draw_networkx_labels(
+                G, pos, font_size=12, font_weight="bold", ax=ax
+            )
+            for _, t in texts.items():
+                t.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="white")])
+
+            # Edge + Panah
+            if len(G.edges()) > 0:
+                nx.draw_networkx_edges(
+                    G, pos, width=edge_widths, edge_color="gray", arrows=True,
+                    arrowsize=25, arrowstyle="-|>", connectionstyle="arc3,rad=0.08",
+                    node_size=node_sizes, min_source_margin=15, min_target_margin=25, ax=ax
+                )
+
+                # Label Lift
+                edge_labels = {(u, v): f"{G[u][v]['lift']:.2f}" for u, v in G.edges()}
+                edge_texts = nx.draw_networkx_edge_labels(
+                    G, pos, edge_labels=edge_labels, font_size=10, font_color="red",
+                    font_weight="bold", rotate=True, label_pos=0.35,
+                    horizontalalignment='center', verticalalignment='center', ax=ax
+                )
+                for _, t in edge_texts.items():
+                    t.set_path_effects([PathEffects.withStroke(linewidth=2, foreground="white")])
+
+            plt.axis("off")
+            
+            # Tampilkan di Streamlit (transparent=True agar menyatu dengan Dark/Light mode)
+            st.pyplot(fig, transparent=True)
 
 # ==============================================================================
 # HALAMAN 3: DATABASE ATURAN APRIORI
