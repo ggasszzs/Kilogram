@@ -73,7 +73,7 @@ st.markdown("""
 # ==============================================================================
 def get_category(product_name):
     name_lower = product_name.lower()
-    makanan_keywords = ['nasi', 'sate', 'ayam', 'spaghetti', 'burger', 'sandwich', 'fries', 'cireng', 'bala', 'omelete', 'tahu', 'telur', 'wings']
+    makanan_keywords = ['nasi', 'sate', 'ayam', 'spaghetti', 'burger', 'sandwich', 'fries', 'cireng', 'bala', 'omelete', 'tahu', 'telur', 'wings', 'tempe', 'chicken']
     pastry_keywords = ['croissant', 'kouign', 'pain', 'berliner', 'tartlet', 'brownies', 'cookies', 'churros', 'pancake', 'monkey', 'brule', 'nut bar']
     
     if any(k in name_lower for k in makanan_keywords): return "Makanan"
