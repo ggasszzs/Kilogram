@@ -16,6 +16,14 @@ st.set_page_config(page_title="Kilo POS System", page_icon="🛒", layout="wide"
 if 'cart' not in st.session_state:
     st.session_state.cart = []
 
+if 'sales_history' not in st.session_state:
+    # Data awal agar chart tidak kosong, akan bertambah terus saat transaksi
+    st.session_state.sales_history = {
+        "Java Latte": 142, "Americano Ice Bold": 98, "Butter Croissant": 87, 
+        "Spaghetti Aglio e Olio": 76, "Choco Berry": 65, "Lemon Tea Ice": 54,
+        "Latte Ice Bold": 43, "Cappucino Hot Light": 32, "Earl Grey": 21, "Churros Beton": 15
+    }
+
 def add_to_cart(product):
     if product not in st.session_state.cart:
         st.session_state.cart.append(product)
@@ -65,6 +73,33 @@ st.markdown("""
     }
     
     .cart-item { font-size: 16px; padding: 12px 0; border-bottom: 1px dashed rgba(128,128,128,0.3); font-weight: 600; }
+    
+    /* SIDEBAR ESTETIK */
+    [data-testid="stSidebar"] div[role="radiogroup"] > label {
+        background: rgba(128,128,128,0.05);
+        padding: 12px 15px;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        transition: all 0.2s ease-in-out;
+        border: 1px solid transparent;
+        cursor: pointer;
+    }
+    [data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
+        background: rgba(59, 130, 246, 0.1);
+        transform: scale(1.02);
+    }
+    [data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"] {
+        background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+        border-left: 4px solid #3b82f6;
+    }
+    /* Sembunyikan bulatan radio bawaan */
+    [data-testid="stSidebar"] span[data-baseweb="radio"] {
+        display: none !important;
+    }
+    [data-testid="stSidebar"] div[role="radiogroup"] > label div[data-testid="stMarkdownContainer"] p {
+        font-weight: 600;
+        font-size: 16px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -284,6 +319,12 @@ if menu_selection == "Kasir & Rekomendasi":
             if st.button("💳 Proses Pembayaran", type="primary", use_container_width=True):
                 with st.spinner("⏳ Menyimpan transaksi & Melatih ulang AI..."):
                     process_transaction_and_retrain(st.session_state.cart)
+                    # Catat history penjualan untuk chart
+                    for item in st.session_state.cart:
+                        if item in st.session_state.sales_history:
+                            st.session_state.sales_history[item] += 1
+                        else:
+                            st.session_state.sales_history[item] = 1
                 st.balloons()
                 st.success("🎉 Transaksi Berhasil! AI telah mempelajari kombinasi menu ini.")
                 clear_cart()
@@ -340,9 +381,38 @@ elif menu_selection == "Visualisasi Data":
         
     st.markdown("<br>", unsafe_allow_html=True)
     
+    # ---------------- BAR CHART TOP 10 ----------------
+    with st.container():
+        st.subheader("🏆 Top 10 Menu Paling Sering Dibeli")
+        st.markdown("<p class='text-muted'>Data penjualan otomatis diperbarui secara <i>real-time</i> saat kasir memproses pesanan.</p>", unsafe_allow_html=True)
+        
+        # Sort history and take top 10
+        sorted_sales = sorted(st.session_state.sales_history.items(), key=lambda x: x[1], reverse=True)[:10]
+        df_sales = pd.DataFrame(sorted_sales, columns=["Menu", "Total Terjual"])
+        df_sales = df_sales.sort_values(by="Total Terjual", ascending=True) # Sort ascending for Plotly horizontal bar
+
+        fig_bar = px.bar(
+            df_sales, x="Total Terjual", y="Menu", orientation='h',
+            color="Total Terjual", color_continuous_scale="Blues",
+            text="Total Terjual"
+        )
+        fig_bar.update_layout(
+            showlegend=False,
+            margin=dict(l=0, r=20, t=20, b=0),
+            height=400,
+            xaxis_title="",
+            yaxis_title=""
+        )
+        # Bold y-axis labels
+        fig_bar.update_yaxes(tickfont=dict(weight='bold', size=13))
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+    st.markdown("<hr style='border-color: rgba(128,128,128,0.2); margin: 40px 0;'>", unsafe_allow_html=True)
+
+    # ---------------- NETWORK GRAPH ----------------
     with st.container():
         st.subheader("🌐 Jaringan Koneksi Menu (Network Graph)")
-        st.markdown("<p class='text-muted'>Peta ini menunjukkan bagaimana menu-menu di restoran Anda saling terhubung.</p>", unsafe_allow_html=True)
+        st.markdown("<p class='text-muted'>Peta asosiasi produk. Semakin tebal panah, semakin kuat pelanggan membeli dua produk ini secara bersamaan.</p>", unsafe_allow_html=True)
         if len(df_rules) > 0:
             top_rules = df_rules.sort_values(by='lift', ascending=False).head(30)
             G = nx.DiGraph()
@@ -354,6 +424,11 @@ elif menu_selection == "Visualisasi Data":
             pos = nx.circular_layout(G)
             node_sizes = [1500 + G.degree(node) * 300 for node in G.nodes()]
             
+            # Agar label tidak tumpang tindih dengan bulatannya, dorong posisinya sedikit ke luar (scale > 1)
+            pos_labels = {}
+            for node, coords in pos.items():
+                pos_labels[node] = (coords[0] * 1.20, coords[1] * 1.20)
+            
             edge_widths = []
             if len(G.edges()) > 0:
                 min_lift = min([G[u][v]['lift'] for u, v in G.edges()])
@@ -361,28 +436,35 @@ elif menu_selection == "Visualisasi Data":
                     width = ((G[u][v]['lift'] - min_lift) * 6) + 1.5
                     edge_widths.append(width)
 
-            fig, ax = plt.subplots(figsize=(12, 10))
-            nx.draw_networkx_nodes(G, pos, node_size=node_sizes, node_color="pink", edgecolors="black", linewidths=1.5, ax=ax)
+            fig, ax = plt.subplots(figsize=(16, 14)) # Ukuran diperbesar
             
-            texts = nx.draw_networkx_labels(G, pos, font_size=15, font_weight="bold", ax=ax)
+            # Draw nodes
+            nx.draw_networkx_nodes(G, pos, node_size=node_sizes, node_color="#fbcfe8", edgecolors="#be185d", linewidths=2, ax=ax)
+            
+            # Draw labels OUTSIDE the nodes
+            texts = nx.draw_networkx_labels(G, pos_labels, font_size=13, font_weight="bold", font_family="sans-serif", ax=ax)
             for _, t in texts.items():
-                t.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="white")])
+                t.set_path_effects([PathEffects.withStroke(linewidth=4, foreground="white")])
 
             if len(G.edges()) > 0:
+                # Draw edges
                 nx.draw_networkx_edges(
-                    G, pos, width=edge_widths, edge_color="lightgrey", arrows=True,
-                    arrowsize=30, arrowstyle="-|>", connectionstyle="arc3,rad=0.08",
-                    node_size=node_sizes, min_source_margin=15, min_target_margin=25, ax=ax
+                    G, pos, width=edge_widths, edge_color="#cbd5e1", arrows=True,
+                    arrowsize=25, arrowstyle="-|>", connectionstyle="arc3,rad=0.1",
+                    node_size=node_sizes, min_source_margin=20, min_target_margin=20, ax=ax
                 )
+                
+                # Draw edge labels
                 edge_labels = {(u, v): f"{G[u][v]['lift']:.2f}" for u, v in G.edges()}
                 edge_texts = nx.draw_networkx_edge_labels(
-                    G, pos, edge_labels=edge_labels, font_size=15, font_color="red",
-                    font_weight="bold", rotate=True, label_pos=0.35,
-                    horizontalalignment='center', verticalalignment='center', ax=ax
+                    G, pos, edge_labels=edge_labels, font_size=12, font_color="#dc2626",
+                    font_weight="bold", rotate=True, label_pos=0.35, ax=ax
                 )
                 for _, t in edge_texts.items():
-                    t.set_path_effects([PathEffects.withStroke(linewidth=2, foreground="white")])
+                    t.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="white")])
 
+            # Batas area gambar diperbesar agar label luar tidak terpotong
+            ax.margins(0.15) 
             plt.axis("off")
             st.pyplot(fig, transparent=True)
 
