@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -381,34 +382,6 @@ elif menu_selection == "Visualisasi Data":
         
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # ---------------- BAR CHART TOP 10 ----------------
-    with st.container():
-        st.subheader("🏆 Top 10 Menu Paling Sering Dibeli")
-        st.markdown("<p class='text-muted'>Data penjualan otomatis diperbarui secara <i>real-time</i> saat kasir memproses pesanan.</p>", unsafe_allow_html=True)
-        
-        # Sort history and take top 10
-        sorted_sales = sorted(st.session_state.sales_history.items(), key=lambda x: x[1], reverse=True)[:10]
-        df_sales = pd.DataFrame(sorted_sales, columns=["Menu", "Total Terjual"])
-        df_sales = df_sales.sort_values(by="Total Terjual", ascending=True) # Sort ascending for Plotly horizontal bar
-
-        fig_bar = px.bar(
-            df_sales, x="Total Terjual", y="Menu", orientation='h',
-            color="Total Terjual", color_continuous_scale="Blues",
-            text="Total Terjual"
-        )
-        fig_bar.update_layout(
-            showlegend=False,
-            margin=dict(l=0, r=20, t=20, b=0),
-            height=400,
-            xaxis_title="",
-            yaxis_title=""
-        )
-        # Bold y-axis labels
-        fig_bar.update_yaxes(tickfont=dict(weight='bold', size=13))
-        st.plotly_chart(fig_bar, use_container_width=True)
-
-    st.markdown("<hr style='border-color: rgba(128,128,128,0.2); margin: 40px 0;'>", unsafe_allow_html=True)
-
     # ---------------- NETWORK GRAPH ----------------
     with st.container():
         st.subheader("🌐 Jaringan Koneksi Menu (Network Graph)")
@@ -498,3 +471,33 @@ elif menu_selection == "Database Aturan":
         )
     else:
         st.warning("Data aturan kosong.")
+
+    st.markdown("<hr style='border-color: rgba(128,128,128,0.2); margin: 40px 0;'>", unsafe_allow_html=True)
+
+    # ---------------- BAR CHART TOP 10 ----------------
+    with st.container():
+        st.subheader("🏆 Top 10 Menu Paling Sering Dibeli")
+        st.markdown("<p class='text-muted'>Data penjualan otomatis diperbarui secara <i>real-time</i> saat kasir memproses pesanan.</p>", unsafe_allow_html=True)
+        
+        # Sort history and take top 10
+        sorted_sales = sorted(st.session_state.sales_history.items(), key=lambda x: x[1], reverse=True)[:10]
+        df_sales = pd.DataFrame(sorted_sales, columns=["Menu", "Total Terjual"])
+        df_sales = df_sales.sort_values(by="Total Terjual", ascending=True) # Sort ascending for Plotly horizontal bar
+
+        fig_bar = px.bar(
+            df_sales, x="Total Terjual", y="Menu", orientation='h',
+            color="Total Terjual", color_continuous_scale="Blues",
+            text="Total Terjual"
+        )
+        fig_bar.update_layout(
+            showlegend=False,
+            margin=dict(l=0, r=20, t=20, b=0),
+            height=400,
+            xaxis_title="",
+            yaxis_title=""
+        )
+        # Bold y-axis labels
+        fig_bar.update_yaxes(tickfont=dict(weight='bold', size=13))
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+    
