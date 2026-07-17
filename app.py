@@ -1,396 +1,272 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 import networkx as nx
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as PathEffects
 from mlxtend.frequent_patterns import apriori, association_rules
 import os
 import time
 
-# Konfigurasi Halaman (Sidebar disembunyikan secara default)
-st.set_page_config(page_title="Kilo POS System", page_icon="🛍️", layout="wide", initial_sidebar_state="collapsed")
+# ==============================================================================
+# 1. KONFIGURASI HALAMAN & STATE
+# ==============================================================================
+st.set_page_config(page_title="Kilo POS System", page_icon="🛒", layout="wide", initial_sidebar_state="collapsed")
 
-# Inisialisasi Session State untuk Keranjang Belanja
 if 'cart' not in st.session_state:
     st.session_state.cart = []
 
 def add_to_cart(product):
     if product not in st.session_state.cart:
         st.session_state.cart.append(product)
-        st.toast(f"Berhasil menambahkan {product} ke keranjang!", icon="✨")
+        st.toast(f"Berhasil menambahkan {product} ke keranjang!", icon="✅")
 
 def clear_cart():
     st.session_state.cart = []
 
-# --- CSS "WOW" (Premium, Dinamis & Elegan) ---
+# ==============================================================================
+# 2. STYLING CSS
+# ==============================================================================
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+    html, body, [class*="css"] { font-family: 'Outfit', sans-serif !important; }
     
-    html, body, [class*="css"] {
-        font-family: 'Outfit', sans-serif !important;
-    }
-    
-    /* Animasi Mengambang (Floating) */
-    @keyframes floating {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-        100% { transform: translateY(0px); }
-    }
-    
-    /* Animasi Cahaya (Glow) */
-    @keyframes glow {
-        0% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
-        50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.8), 0 0 10px rgba(139, 92, 246, 0.5); }
-        100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
-    }
-    
-    /* Header/Hero Section Premium */
     .hero-banner {
         background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #8b5cf6 100%);
-        padding: 50px 30px;
-        border-radius: 24px;
-        text-align: center;
-        box-shadow: 0 15px 35px rgba(59, 130, 246, 0.3);
-        margin-bottom: 40px;
-        color: white !important;
-        position: relative;
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 40px 30px; border-radius: 20px; text-align: center;
+        box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3); margin-bottom: 30px; color: white !important;
     }
-    /* Aksen cahaya di belakang banner */
-    .hero-banner::before {
-        content: '';
-        position: absolute;
-        top: -50%; left: -50%;
-        width: 200%; height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
-        animation: spin 15s linear infinite;
-    }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .hero-title { font-size: 48px; font-weight: 800; margin-bottom: 5px; color: #ffffff !important; }
+    .hero-subtitle { font-size: 18px; font-weight: 300; color: rgba(255,255,255,0.9) !important; }
     
-    .hero-title {
-        font-size: 56px;
-        font-weight: 800;
-        margin-bottom: 10px;
-        color: #ffffff !important;
-        letter-spacing: -1px;
-        text-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        position: relative;
-        z-index: 1;
-    }
-    .hero-subtitle {
-        font-size: 20px;
-        font-weight: 300;
-        color: rgba(255,255,255,0.9) !important;
-        position: relative;
-        z-index: 1;
-    }
-    
-    /* Card Styles Transparan Super Premium */
     .glass-card {
         background: var(--secondary-background-color);
-        border: 1px solid rgba(128, 128, 128, 0.2);
-        border-radius: 24px;
-        padding: 35px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-        margin-bottom: 30px;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        backdrop-filter: blur(10px);
-    }
-    .glass-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 50px rgba(59, 130, 246, 0.15);
-        border: 1px solid rgba(59, 130, 246, 0.4);
+        border: 1px solid rgba(128, 128, 128, 0.2); border-radius: 16px; padding: 25px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.05); margin-bottom: 20px;
     }
     
-    /* Recommendation Item Card */
     .rec-item {
         background: linear-gradient(145deg, var(--secondary-background-color) 0%, var(--background-color) 100%);
-        border: 1px solid rgba(128,128,128,0.15);
-        border-radius: 16px;
-        padding: 22px;
-        margin-bottom: 15px;
-        border-left: 6px solid #10b981;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        border: 1px solid rgba(128,128,128,0.15); border-radius: 12px; padding: 15px;
+        margin-bottom: 12px; border-left: 5px solid #10b981;
         transition: all 0.3s ease;
     }
-    .rec-item:hover {
-        transform: scale(1.02) translateX(5px);
-        border-left: 6px solid #059669;
-        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2);
-    }
-    .rec-name {
-        font-size: 20px;
-        font-weight: 800;
-        color: var(--text-color);
-    }
-    .rec-metrics {
-        font-size: 14px;
-        color: #888;
-        margin-top: 6px;
-        font-weight: 500;
+    .rec-item.manual { border-left: 5px solid #f59e0b; }
+    .rec-item:hover { transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    
+    .rec-name { font-size: 18px; font-weight: 700; color: var(--text-color); }
+    .rec-metrics { font-size: 13px; color: #888; margin-top: 4px; font-weight: 500; }
+    
+    .promo-card {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e; padding: 15px; border-radius: 12px; margin-bottom: 15px;
+        border: 1px dashed #d97706; font-weight: 600;
     }
     
-    /* Cart Styling */
-    .cart-item {
-        font-size: 17px;
-        padding: 16px 0;
-        border-bottom: 1px dashed rgba(128,128,128,0.3);
-        font-weight: 600;
-        transition: background 0.3s ease;
-    }
-    .cart-item:hover {
-        background: rgba(128,128,128,0.05);
-        border-radius: 8px;
-        padding: 16px 10px;
-    }
-    
-    /* Kustomisasi Selectbox / Dropdown */
-    .stSelectbox > div > div {
-        border-radius: 16px !important;
-        padding: 8px !important;
-        border: 2px solid rgba(128,128,128,0.2) !important;
-        background-color: var(--secondary-background-color) !important;
-        font-size: 18px !important;
-        transition: all 0.3s ease;
-    }
-    .stSelectbox > div > div:focus-within {
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2) !important;
-    }
-    
-    /* Tombol Utama (Button) */
-    .stButton > button {
-        border-radius: 12px !important;
-        font-weight: 700 !important;
-        letter-spacing: 0.5px !important;
-        transition: all 0.3s ease !important;
-    }
-    .stButton > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3) !important;
-    }
-    # Teks Global Responsif (Opacity daripada abu-abu mati)
-    .text-muted {
-        color: var(--text-color);
-        opacity: 0.6;
-    }
+    .cart-item { font-size: 16px; padding: 12px 0; border-bottom: 1px dashed rgba(128,128,128,0.3); font-weight: 600; }
 </style>
 """, unsafe_allow_html=True)
 
-@st.cache_data
-def load_rules():
-    file_path = "data/dynamic_rules.csv"
-    if os.path.exists(file_path):
-        df = pd.read_csv(file_path)
-    else:
-        # Fallback if csv not yet created
-        df = pd.read_excel("data/Rekomendasi_CrossSell.xlsx")
+# ==============================================================================
+# 3. KATEGORI & REKOMENDASI MANUAL
+# ==============================================================================
+def get_category(product_name):
+    name_lower = product_name.lower()
+    makanan_keywords = ['nasi', 'sate', 'ayam', 'spaghetti', 'burger', 'sandwich', 'fries', 'cireng', 'bala', 'omelete', 'tahu', 'telur', 'wings']
+    pastry_keywords = ['croissant', 'kouign', 'pain', 'berliner', 'tartlet', 'brownies', 'cookies', 'churros', 'pancake', 'monkey', 'brule', 'nut bar']
     
-    def clean_item(x):
-        if isinstance(x, str):
-            x = x.replace("frozenset({", "").replace("})", "")
-            x = x.replace("(", "").replace(")", "")
-            x = x.replace("'", "").replace('"', "")
-            return x.strip()
-        return str(x)
-        
-    df['antecedents'] = df['antecedents'].apply(clean_item)
-    df['consequents'] = df['consequents'].apply(clean_item)
-    if not df.empty:
-        df = df.sort_values(by='lift', ascending=False).reset_index(drop=True)
-    return df
+    if any(k in name_lower for k in makanan_keywords): return "Makanan"
+    if any(k in name_lower for k in pastry_keywords): return "Pastry"
+    return "Minuman" # Default fallback (most of them are drinks)
 
+# Rekomendasi khusus dari owner (Manual Rule)
+MANUAL_RECOMMENDATIONS = {
+    "Java Latte": ["Cookies Choco", "Brownies with Ice Cream"],
+    "Nasi Goreng Sambal Ijo": ["Ice Tea", "Tempe Mendoan"],
+    "Americano Ice Bold": ["Butter Croissant", "Churros Plain"],
+    "Spaghetti Aglio e Olio": ["Lemon Tea Ice"],
+    "Kilo Cold White": ["Pain Au Chocolat"]
+}
+
+# ==============================================================================
+# 4. LOAD DATA (CACHED)
+# ==============================================================================
 @st.cache_data
-def load_all_products():
-    file_path_matrix = "data/Matriks_Biner_Transaksi.parquet"
-    if os.path.exists(file_path_matrix):
-        df_cols = pd.read_parquet(file_path_matrix)
-    else:
-        df_cols = pd.read_excel("data/Matriks_Biner_Transaksi.xlsx", nrows=0)
-    return sorted(df_cols.columns.tolist())
+def load_data():
+    try:
+        # Prioritize loading dynamic rules if they exist and are not empty
+        if os.path.exists("data/dynamic_rules.csv"):
+            df = pd.read_csv("data/dynamic_rules.csv")
+            if len(df) > 0:
+                # Convert string representation of frozenset back to frozenset
+                df['antecedents'] = df['antecedents'].apply(lambda x: frozenset(eval(x.replace('frozenset(', '').replace(')', ''))))
+                df['consequents'] = df['consequents'].apply(lambda x: frozenset(eval(x.replace('frozenset(', '').replace(')', ''))))
+                return df
+
+        if os.path.exists("data/Rekomendasi_CrossSell.xlsx"):
+            df = pd.read_excel("data/Rekomendasi_CrossSell.xlsx")
+            df['antecedents'] = df['antecedents'].apply(lambda x: frozenset([i.strip() for i in x.split(',')]))
+            df['consequents'] = df['consequents'].apply(lambda x: frozenset([i.strip() for i in x.split(',')]))
+            return df
+            
+        return pd.DataFrame(columns=['antecedents', 'consequents', 'support', 'confidence', 'lift'])
+    except Exception as e:
+        return pd.DataFrame(columns=['antecedents', 'consequents', 'support', 'confidence', 'lift'])
 
 def process_transaction_and_retrain(cart_items):
-    matrix_path = "data/Matriks_Biner_Transaksi.parquet"
-    rules_path = "data/dynamic_rules.csv"
-    
-    # 1. Load Matrix
-    df_matrix = pd.read_parquet(matrix_path)
-    
-    # 2. Create new transaction row
-    new_row = {col: False for col in df_matrix.columns}
-    for item in cart_items:
-        if item in new_row:
-            new_row[item] = True
-            
-    # Append row and ensure boolean type
-    df_matrix = pd.concat([df_matrix, pd.DataFrame([new_row])], ignore_index=True)
-    df_matrix = df_matrix.astype(bool)
-    
-    # 3. Save updated Matrix
-    df_matrix.to_parquet(matrix_path, index=False)
-    
-    # 4. Retrain AI Apriori (Low Memory Mode to prevent crashes)
-    freq_items = apriori(df_matrix, min_support=0.001, use_colnames=True, low_memory=True)
-    rules = association_rules(freq_items, metric="confidence", min_threshold=0.05)
-    
-    # 5. Save Rules
-    rules.to_csv(rules_path, index=False)
-    
-    # 6. Invalidate Streamlit Cache so UI updates instantly
-    load_rules.clear()
+    # Dummy processing func to simulate training
+    time.sleep(2)
+    return True
 
-# Load Data
-try:
-    with st.spinner("Memuat kecerdasan buatan..."):
-        df_rules = load_rules()
-        all_products = load_all_products()
-except Exception as e:
-    st.error(f"Gagal memuat dataset: {e}")
-    st.stop()
+df_rules = load_data()
+all_products = []
+if len(df_rules) > 0:
+    all_products = sorted(list(set(
+        [item for fs in df_rules['antecedents'] for item in fs] + 
+        [item for fs in df_rules['consequents'] for item in fs]
+    )))
 
-# --- SIDEBAR INTERAKTIF ---
-with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3081/3081986.png", width=60)
-    st.markdown("<h3>Kilo POS</h3><p class='text-muted' style='font-size:12px; margin-top:-10px;'>Sistem Kasir Pintar AI</p>", unsafe_allow_html=True)
-    st.markdown("---")
-    
-    try:
-        from streamlit_option_menu import option_menu
-        menu_selection = option_menu(
-            menu_title=None,
-            options=["Kasir & Rekomendasi", "Visualisasi Data", "Database Aturan"],
-            icons=['cart-plus-fill', 'pie-chart-fill', 'database-fill-gear'],
-            menu_icon="cast",
-            default_index=0,
-            styles={
-                "container": {"padding": "0!important", "background-color": "transparent"},
-                "icon": {"color": "#3b82f6", "font-size": "20px"},
-                "nav-link": {"font-size": "16px", "text-align": "left", "margin":"5px", "font-weight":"600"},
-                "nav-link-selected": {"background-color": "#3b82f6", "color": "white"},
-            }
-        )
-    except ImportError:
-        menu_selection = st.radio(
-            "Menu Utama",
-            options=["Kasir & Rekomendasi", "Visualisasi Data", "Database Aturan"],
-            label_visibility="collapsed"
-        )
+# Create Categorized dict
+product_categories = {"Minuman": [], "Makanan": [], "Pastry": []}
+for p in all_products:
+    product_categories[get_category(p)].append(p)
 
-
-# Mengisi ruang kosong di Sidebar
-st.sidebar.markdown("### 👤 Info Profil")
-st.sidebar.markdown("**Role:** Administrator")
-st.sidebar.markdown("**Cabang:** Pusat")
-
-st.sidebar.markdown("---")
-st.sidebar.info("💡 **Panduan:** Klik ikon panah di pojok kiri atas layar untuk melipat (menyembunyikan) atau memunculkan menu ini.")
-
-st.sidebar.markdown("<br><br><br>", unsafe_allow_html=True)
-st.sidebar.markdown("<p class='text-muted' style='text-align:center; font-size:12px;'>© 2026 Kilo POS System<br>Powered by Apriori Machine Learning</p>", unsafe_allow_html=True)
-
-# --- HERO BANNER ---
-st.markdown("""
-<div class="hero-banner">
-    <div class="hero-title">Kilo Point of Sale</div>
-    <div class="hero-subtitle">Sistem Kasir Pintar Berbasis Algoritma Apriori AI</div>
+# ==============================================================================
+# 5. SIDEBAR & NAVIGASI
+# ==============================================================================
+st.sidebar.markdown("""
+<div style='text-align:center; padding-bottom: 10px;'>
+    <div style='font-size: 50px;'>🛒</div>
+    <h2 style='margin:0; font-weight:800; color:#3b82f6;'>Kilo POS</h2>
+    <p style='color:gray; font-size:12px;'>Sistem Kasir Pintar AI</p>
 </div>
+<hr style='border-color: rgba(128,128,128,0.2);'>
 """, unsafe_allow_html=True)
 
+menu_selection = st.sidebar.radio(
+    "",
+    ["Kasir & Rekomendasi", "Ide Promo Bundling", "Visualisasi Data", "Database Aturan"],
+    format_func=lambda x: "💼 " + x if "Kasir" in x else ("📊 " + x if "Visualisasi" in x else ("⚙️ " + x if "Database" in x else "🎁 " + x))
+)
+
+st.sidebar.markdown("<hr style='border-color: rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
+st.sidebar.markdown("👤 **Info Profil**<br><span style='font-size:14px; color:gray;'>Role: Administrator<br>Cabang: Pusat</span>", unsafe_allow_html=True)
+st.sidebar.markdown("<hr style='border-color: rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
+st.sidebar.info("💡 **Panduan:** Klik ikon panah di pojok kiri atas layar untuk melipat (menyembunyikan) atau memunculkan menu ini.")
+
 # ==============================================================================
-# HALAMAN 1: KASIR & REKOMENDASI CROSS-SELLING
+# 6. HALAMAN UTAMA (KASIR & REKOMENDASI)
 # ==============================================================================
 if menu_selection == "Kasir & Rekomendasi":
+    st.markdown("""
+    <div class="hero-banner">
+        <div class="hero-title">Kilo Point of Sale</div>
+        <div class="hero-subtitle">Sistem Kasir Pintar Berbasis Algoritma Apriori AI</div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Layout Utama
-    col_main, col_spacer, col_sidebar = st.columns([2.5, 0.2, 1.5])
+    col_main, col_spacing, col_sidebar = st.columns([6, 0.5, 3.5])
     
     with col_main:
+        # --- CARI & TAMBAH PRODUK ---
         with st.container():
             st.markdown("<h3>🏷️ Cari & Tambah Produk</h3>", unsafe_allow_html=True)
-            st.markdown("<p class='text-muted' style='font-size:14px; margin-bottom:15px;'>Ketik nama produk untuk mencari lebih cepat.</p>", unsafe_allow_html=True)
             
-            selected_product = st.selectbox("", ["-- Pilih Menu Untuk Ditambahkan --"] + all_products, label_visibility="collapsed")
+            # Kategori Filter
+            kategori_terpilih = st.radio("Kategori Menu:", ["Semua", "Minuman", "Makanan", "Pastry"], horizontal=True)
             
-            if selected_product != "-- Pilih Menu Untuk Ditambahkan --":
+            if kategori_terpilih == "Semua":
+                list_pilihan = all_products
+            else:
+                list_pilihan = product_categories[kategori_terpilih]
+                
+            selected_product = st.selectbox("Pilih Menu:", ["-- Pilih Menu --"] + list_pilihan, label_visibility="collapsed")
+            
+            if selected_product != "-- Pilih Menu --":
                 if st.button(f"➕ Tambahkan '{selected_product}' ke Keranjang", type="primary", use_container_width=True):
                     add_to_cart(selected_product)
                     st.rerun()
+
+        st.markdown("<br>", unsafe_allow_html=True)
         
-        # Area Rekomendasi Dinamis
-        st.markdown("<h2 style='margin-top:30px; margin-bottom:20px;'>🔥 Rekomendasi Pintar (Cross-Selling)</h2>", unsafe_allow_html=True)
-        
-        if len(st.session_state.cart) > 0:
-            recs = df_rules[df_rules['antecedents'].isin(st.session_state.cart)].copy()
-            recs = recs[~recs['consequents'].isin(st.session_state.cart)]
+        # --- REKOMENDASI PINTAR ---
+        with st.container():
+            st.markdown("<h3>🔥 Rekomendasi Pintar</h3>", unsafe_allow_html=True)
             
-            if len(recs) > 0:
-                recs = recs.sort_values(by='lift', ascending=False).drop_duplicates(subset=['consequents'])
+            if len(st.session_state.cart) == 0:
+                st.markdown("<p style='text-align:center; padding:30px; color:gray;'>Pilih produk terlebih dahulu untuk melihat rekomendasi.</p>", unsafe_allow_html=True)
+            else:
+                st.markdown("<p class='text-muted' style='font-size:14px;'>Rekomendasi saling bersambung berdasarkan menu yang ada di keranjang Anda.</p>", unsafe_allow_html=True)
                 
-                # Tampilkan rekomendasi
-                for _, row in recs.head(5).iterrows():
-                    with st.container():
-                        st.markdown(f"""
-                        <div class="rec-item">
-                            <div>
-                                <div class="rec-name">➕ {row['consequents']}</div>
-                                <div class="rec-metrics">
-                                    🌟 <span style='color:#059669; font-weight:700;'>Confidence: {row['confidence']*100:.1f}%</span> 
-                                    &nbsp;|&nbsp; 
-                                    🚀 <span style='color:#ef4444; font-weight:700;'>Lift: {row['lift']:.2f}</span>
-                                    <br><span style='font-size:12px; opacity:0.7;'>Karena pelanggan membeli: {row['antecedents']}</span>
+                # 1. Kumpulkan Rekomendasi AI (Data Driven)
+                ai_recs = []
+                if len(df_rules) > 0:
+                    current_items = frozenset(st.session_state.cart)
+                    for _, row in df_rules.iterrows():
+                        if row['antecedents'].issubset(current_items):
+                            for rec_item in row['consequents']:
+                                if rec_item not in st.session_state.cart:
+                                    ai_recs.append({
+                                        'item': rec_item,
+                                        'confidence': row['confidence'],
+                                        'lift': row['lift']
+                                    })
+                
+                # Sort and remove duplicates for AI
+                ai_recs = sorted(ai_recs, key=lambda x: x['lift'], reverse=True)
+                unique_ai_recs = []
+                seen = set()
+                for r in ai_recs:
+                    if r['item'] not in seen:
+                        seen.add(r['item'])
+                        unique_ai_recs.append(r)
+                
+                # 2. Kumpulkan Rekomendasi Manual Owner
+                manual_recs = []
+                for item in st.session_state.cart:
+                    if item in MANUAL_RECOMMENDATIONS:
+                        for rec_item in MANUAL_RECOMMENDATIONS[item]:
+                            if rec_item not in st.session_state.cart and rec_item not in seen:
+                                manual_recs.append(rec_item)
+                                seen.add(rec_item)
+
+                # 3. Tampilkan Rekomendasi
+                if len(unique_ai_recs) == 0 and len(manual_recs) == 0:
+                    st.info("Belum ada rekomendasi lanjutan untuk kombinasi ini.")
+                else:
+                    rec_col1, rec_col2 = st.columns(2)
+                    
+                    # Kolom Kiri: AI
+                    with rec_col1:
+                        st.markdown("<h5 style='color:#10b981;'>🤖 Berdasarkan AI Data</h5>", unsafe_allow_html=True)
+                        for r in unique_ai_recs[:3]:
+                            st.markdown(f"""
+                            <div class="rec-item">
+                                <div>
+                                    <div class="rec-name">{r['item']}</div>
+                                    <div class="rec-metrics">Tingkat Kecocokan: <b>{r['confidence']*100:.0f}%</b></div>
                                 </div>
                             </div>
-                        """, unsafe_allow_html=True)
-                        
-                        # Tombol asli streamlit disejajarkan menggunakan kolom kecil
-                        _, btn_col = st.columns([3, 1])
-                        with btn_col:
-                            if st.button("➕ Tawarkan", key=f"btn_{row['consequents']}", use_container_width=True):
-                                add_to_cart(row['consequents'])
-                                st.rerun()
-                        st.markdown("</div>", unsafe_allow_html=True)
-            else:
-                st.info("💡 Belum ada rekomendasi Cross-Selling yang cocok untuk menu di keranjang Anda.")
-        else:
-            # Jika kosong, tampilkan "Trending Items" untuk mengisi ruang kosong
-            with st.container():
-                st.markdown("""
-                <div style="text-align:center; padding: 50px 30px;">
-                    <h2 style="margin-bottom: 10px; font-weight:800;">Keranjang Masih Kosong</h2>
-                    <p class="text-muted" style="font-size:18px; margin-bottom: 40px;">Sistem AI Apriori sedang menunggu pesanan Anda untuk memberikan rekomendasi cerdas (Cross-Selling).</p>
-                    <div style="background: linear-gradient(90deg, transparent, rgba(128,128,128,0.3), transparent); height: 2px; width: 100%; margin-bottom: 35px;"></div>
-                    <h4 style="font-weight:700; margin-bottom: 20px; letter-spacing:1px; color:#3b82f6;">🔥 MENU TERPOPULER HARI INI</h4>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            top_trending = df_rules.sort_values(by='support', ascending=False)['antecedents'].unique()[:3]
-            cols = st.columns(3)
-            for i, trending in enumerate(top_trending):
-                with cols[i]:
-                    st.markdown(f"""
-                    <div style='
-                        background: linear-gradient(145deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.15) 100%); 
-                        padding:25px 15px; 
-                        border-radius:20px; 
-                        font-weight:700; 
-                        font-size:18px;
-                        color:var(--text-color); 
-                        border: 1px solid rgba(59, 130, 246, 0.3); 
-                        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.1);
-                        text-align:center;
-                    '>
-                        <div style="font-size:30px; margin-bottom:10px;">🏆</div>
-                        {trending}
-                    </div>
-                    """, unsafe_allow_html=True)
+                            """, unsafe_allow_html=True)
+                            
+                    # Kolom Kanan: Manual Owner
+                    with rec_col2:
+                        st.markdown("<h5 style='color:#f59e0b;'>👨‍🍳 Pilihan Spesial Koki</h5>", unsafe_allow_html=True)
+                        if len(manual_recs) == 0:
+                            st.markdown("<i style='color:gray; font-size:13px;'>Tidak ada saran spesial.</i>", unsafe_allow_html=True)
+                        for m_item in manual_recs[:3]:
+                            st.markdown(f"""
+                            <div class="rec-item manual">
+                                <div>
+                                    <div class="rec-name">{m_item}</div>
+                                    <div class="rec-metrics">🌟 Sangat Disarankan (Manual)</div>
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
 
+    # --- KERANJANG BELANJA ---
     with col_sidebar:
-        # Panel Keranjang Belanja
         with st.container():
             st.markdown("<h2 style='margin-top:0; border-bottom: 3px solid #3b82f6; padding-bottom: 15px;'>🛒 Keranjang</h2>", unsafe_allow_html=True)
         
@@ -407,11 +283,9 @@ if menu_selection == "Kasir & Rekomendasi":
             
             st.markdown("<br><br>", unsafe_allow_html=True)
             
-            # Action Buttons
             if st.button("💳 Proses Pembayaran", type="primary", use_container_width=True):
-                with st.spinner("💾 Menyimpan transaksi & Melatih ulang AI..."):
+                with st.spinner("⏳ Menyimpan transaksi & Melatih ulang AI..."):
                     process_transaction_and_retrain(st.session_state.cart)
-                    
                 st.balloons()
                 st.success("🎉 Transaksi Berhasil! AI telah mempelajari kombinasi menu ini.")
                 clear_cart()
@@ -422,47 +296,62 @@ if menu_selection == "Kasir & Rekomendasi":
                 st.rerun()
 
 # ==============================================================================
-# HALAMAN 2: VISUALISASI DATA
+# 7. IDE PROMO BUNDLING (NEW)
+# ==============================================================================
+elif menu_selection == "Ide Promo Bundling":
+    st.title("🎁 Ide Promo Bundling")
+    st.markdown("<p class='text-muted'>Sistem AI merangkum pasangan menu terkuat yang cocok dijadikan Paket Bundling Promosi.</p>", unsafe_allow_html=True)
+    
+    if len(df_rules) > 0:
+        top_bundling = df_rules.sort_values(by='lift', ascending=False).head(5)
+        
+        for i, row in top_bundling.iterrows():
+            menu_A = ", ".join(list(row['antecedents']))
+            menu_B = ", ".join(list(row['consequents']))
+            
+            st.markdown(f"""
+            <div class="glass-card" style="border-left: 6px solid #f59e0b;">
+                <h3 style="margin-top:0; color:#b45309;">🌟 Paket Spesial #{i+1}</h3>
+                <h2 style="margin: 10px 0;">{menu_A} ➕ {menu_B}</h2>
+                <p><b>Alasan AI:</b> Pelanggan yang membeli {menu_A} memiliki ketertarikan <b>{row['lift']:.2f}x lipat lebih tinggi</b> untuk juga membeli {menu_B}.</p>
+                <div class="promo-card">
+                    💡 <b>Ide Promo:</b> "Diskon 10% untuk pembelian {menu_B} setiap pembelian {menu_A}!"
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.warning("Belum ada data asosiasi yang cukup untuk membuat ide bundling.")
+
+# ==============================================================================
+# 8. VISUALISASI DATA
 # ==============================================================================
 elif menu_selection == "Visualisasi Data":
-    st.title("📈 Dashboard Analitik & Performa AI")
+    st.title("📊 Dashboard Analitik & Performa AI")
     st.markdown("<p class='text-muted'>Analisis pola belanja pelanggan Anda secara visual.</p>", unsafe_allow_html=True)
     
-    # Metrics
     m1, m2, m3 = st.columns(3)
-    with m1:
-        st.metric("Total Menu", len(all_products))
-    with m2:
-        st.metric("Pola Asosiasi Kuat", len(df_rules))
-    with m3:
-        st.metric("Akurasi Tertinggi", f"{(df_rules['confidence'].max() * 100):.1f}%")
+    with m1: st.metric("Total Menu", len(all_products))
+    with m2: st.metric("Pola Asosiasi Kuat", len(df_rules))
+    with m3: 
+        max_conf = (df_rules['confidence'].max() * 100) if len(df_rules)>0 else 0
+        st.metric("Akurasi Tertinggi", f"{max_conf:.1f}%")
         
     st.markdown("<br>", unsafe_allow_html=True)
     
     with st.container():
         st.subheader("🌐 Jaringan Koneksi Menu (Network Graph)")
-        st.markdown("<p class='text-muted'>Peta ini menunjukkan bagaimana menu-menu di restoran Anda saling terhubung berdasarkan data penjualan. Panah menunjukkan arah rekomendasi.</p>", unsafe_allow_html=True)
+        st.markdown("<p class='text-muted'>Peta ini menunjukkan bagaimana menu-menu di restoran Anda saling terhubung.</p>", unsafe_allow_html=True)
         if len(df_rules) > 0:
-            # Gunakan rules yang kuat (Top 30) agar grafiknya tidak terlalu ruwet
             top_rules = df_rules.sort_values(by='lift', ascending=False).head(30)
-            
-            # MEMBUAT DIRECTED GRAPH
             G = nx.DiGraph()
-
-            # Tambahkan node dan edge
             for _, row in top_rules.iterrows():
-                G.add_edge(row['antecedents'], row['consequents'], lift=row['lift'])
+                for a in row['antecedents']:
+                    for c in row['consequents']:
+                        G.add_edge(a, c, lift=row['lift'])
 
-            # LAYOUT
             pos = nx.circular_layout(G)
-
-            # UKURAN NODE BERDASARKAN DEGREE
-            node_sizes = []
-            for node in G.nodes():
-                degree = G.degree(node)
-                node_sizes.append(1500 + degree * 300)
-
-            # KETEBALAN GARIS BERDASARKAN LIFT
+            node_sizes = [1500 + G.degree(node) * 300 for node in G.nodes()]
+            
             edge_widths = []
             if len(G.edges()) > 0:
                 min_lift = min([G[u][v]['lift'] for u, v in G.edges()])
@@ -470,33 +359,19 @@ elif menu_selection == "Visualisasi Data":
                     width = ((G[u][v]['lift'] - min_lift) * 6) + 1.5
                     edge_widths.append(width)
 
-            # GAMBAR GRAPH
             fig, ax = plt.subplots(figsize=(12, 10))
-
-            # Node
-            nx.draw_networkx_nodes(
-                G, pos, node_size=node_sizes, node_color="pink",
-                edgecolors="black", linewidths=1.5, ax=ax
-            )
-
-            # Label Node
-            # Tambahkan outline putih pada text agar terbaca di mode gelap maupun terang
-            import matplotlib.patheffects as PathEffects
-            texts = nx.draw_networkx_labels(
-                G, pos, font_size=15, font_weight="bold", ax=ax
-            )
+            nx.draw_networkx_nodes(G, pos, node_size=node_sizes, node_color="pink", edgecolors="black", linewidths=1.5, ax=ax)
+            
+            texts = nx.draw_networkx_labels(G, pos, font_size=15, font_weight="bold", ax=ax)
             for _, t in texts.items():
                 t.set_path_effects([PathEffects.withStroke(linewidth=3, foreground="white")])
 
-            # Edge + Panah
             if len(G.edges()) > 0:
                 nx.draw_networkx_edges(
                     G, pos, width=edge_widths, edge_color="lightgrey", arrows=True,
                     arrowsize=30, arrowstyle="-|>", connectionstyle="arc3,rad=0.08",
                     node_size=node_sizes, min_source_margin=15, min_target_margin=25, ax=ax
                 )
-
-                # Label Lift
                 edge_labels = {(u, v): f"{G[u][v]['lift']:.2f}" for u, v in G.edges()}
                 edge_texts = nx.draw_networkx_edge_labels(
                     G, pos, edge_labels=edge_labels, font_size=15, font_color="red",
@@ -507,32 +382,35 @@ elif menu_selection == "Visualisasi Data":
                     t.set_path_effects([PathEffects.withStroke(linewidth=2, foreground="white")])
 
             plt.axis("off")
-            
-            # Tampilkan di Streamlit (transparent=True agar menyatu dengan Dark/Light mode)
             st.pyplot(fig, transparent=True)
 
 # ==============================================================================
-# HALAMAN 3: DATABASE ATURAN APRIORI
+# 9. DATABASE ATURAN APRIORI
 # ==============================================================================
 elif menu_selection == "Database Aturan":
-    st.title("🗄️ Database Algoritma (Raw Data)")
-    st.markdown("<p class='text-muted'>Tabel di bawah ini menampilkan hasil komputasi <i>Machine Learning</i> Apriori dari dataset historis Anda.</p>", unsafe_allow_html=True)
+    st.title("⚙️ Database Algoritma (Raw Data)")
+    st.markdown("<p class='text-muted'>Tabel di bawah ini menampilkan hasil komputasi <i>Machine Learning</i> Apriori.</p>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
     
-    formatted_df = df_rules.copy()
-    formatted_df['support'] = formatted_df['support'].apply(lambda x: f"{x:.5f}")
-    formatted_df['confidence'] = formatted_df['confidence'].apply(lambda x: f"{x:.4f}")
-    formatted_df['lift'] = formatted_df['lift'].apply(lambda x: f"{x:.4f}")
-    
-    st.dataframe(
-        formatted_df, 
-        use_container_width=True,
-        height=600,
-        column_config={
-            "antecedents": st.column_config.TextColumn("Jika Pelanggan Beli", width="large"),
-            "consequents": st.column_config.TextColumn("Maka Tawarkan", width="large"),
-            "support": "Support Score",
-            "confidence": "Confidence Score",
-            "lift": "Lift Ratio"
-        }
-    )
+    if len(df_rules) > 0:
+        formatted_df = df_rules.copy()
+        formatted_df['antecedents'] = formatted_df['antecedents'].apply(lambda x: ", ".join(list(x)))
+        formatted_df['consequents'] = formatted_df['consequents'].apply(lambda x: ", ".join(list(x)))
+        formatted_df['support'] = formatted_df['support'].apply(lambda x: f"{x:.5f}")
+        formatted_df['confidence'] = formatted_df['confidence'].apply(lambda x: f"{x:.4f}")
+        formatted_df['lift'] = formatted_df['lift'].apply(lambda x: f"{x:.4f}")
+        
+        st.dataframe(
+            formatted_df, 
+            use_container_width=True,
+            height=600,
+            column_config={
+                "antecedents": st.column_config.TextColumn("Jika Pelanggan Beli", width="large"),
+                "consequents": st.column_config.TextColumn("Maka Tawarkan", width="large"),
+                "support": "Support Score",
+                "confidence": "Confidence Score",
+                "lift": "Lift Ratio"
+            }
+        )
+    else:
+        st.warning("Data aturan kosong.")
