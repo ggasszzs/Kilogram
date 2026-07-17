@@ -97,8 +97,16 @@ def load_data():
     try:
         if os.path.exists("data/Rekomendasi_CrossSell.xlsx"):
             df = pd.read_excel("data/Rekomendasi_CrossSell.xlsx")
-            df['antecedents'] = df['antecedents'].apply(lambda x: frozenset([i.strip() for i in x.split(',')]))
-            df['consequents'] = df['consequents'].apply(lambda x: frozenset([i.strip() for i in x.split(',')]))
+            # Parse the string "frozenset({'Item'})" back to an actual frozenset
+            def parse_frozenset(val):
+                if isinstance(val, str) and val.startswith("frozenset"):
+                    return frozenset(eval(val.replace("frozenset(", "").replace(")", "")))
+                elif isinstance(val, str):
+                    return frozenset([i.strip() for i in val.split(',')])
+                return frozenset()
+                
+            df['antecedents'] = df['antecedents'].apply(parse_frozenset)
+            df['consequents'] = df['consequents'].apply(parse_frozenset)
             return df
             
         return pd.DataFrame(columns=['antecedents', 'consequents', 'support', 'confidence', 'lift'])
@@ -111,12 +119,11 @@ def process_transaction_and_retrain(cart_items):
     return True
 
 df_rules = load_data()
-all_products = []
-if len(df_rules) > 0:
-    all_products = sorted(list(set(
-        [item for fs in df_rules['antecedents'] for item in fs] + 
-        [item for fs in df_rules['consequents'] for item in fs]
-    )))
+
+# Semua menu restoran di-hardcode agar tidak hilang meski belum ada di data rules
+all_products = sorted([
+    'Cookies Choco', 'Java Latte', 'Magic Ice Bold', 'Matcha Ice', 'Nasi Ayam Goreng', 'Flat White Bold', 'Kilo Cold White', 'Pain Au Chocolat', 'Kouign Amann', 'Churros Plain', 'Iced Lychee Tea', 'Nut Bar', 'Hojicha Ice', 'Nasi Ayam Bakar', 'Americano Hot Bold', 'Chicken Wings', 'Hojicha Hot', 'Sate Ayam', 'Croissant Almond', 'Affogato', 'Latte Hot Bold', 'Long Black Ice Light', 'Aloe Fresh', 'Green tea', 'Americano Ice Bold', 'Magic Hot Bold', 'Monkey Bread', 'Sandwich Chicken Spicy Mango', 'Tempe Mendoan', 'Latte Hot Light', 'Yellow Breeze', 'Butter Croissant', 'Extra Shot Espresso', 'Creme Brule', 'Romansky', 'Churros Beton', 'Berrymore', 'Tartlet Chocolate', 'Pancake with Ice Cream', 'Matcha Berry', 'French Fries', 'Burger Classic Beef', 'Tahu Goreng Lada Garam', 'Honey Lemon', 'Ice Cream', 'Cold Pressed Orange Juice', 'Matcha Hot', 'Ice Tea', 'Iced Kilo', 'Jahe Lemon', 'Berliner Vanila', 'Americano Ice Light', 'Nasi Goreng Teri Honje', 'Cappucino Ice Bold', 'Chillie Fries', 'Sandwich Chicken Lemon Mayo', 'Chocolate Ice', 'Kunyit Asem', 'Chocolate Hot', 'Latte Ice Light', 'Spaghetti Carbonara', 'Croissant Bacon & Cheese Sandwich', 'Espresso Bold', 'Latte Ice Bold', 'Spaghetti Aglio e Olio', 'Omelete', 'Lemon Tea Ice', 'Ocean Eyes', 'Blue Lagoon', 'Mineral Water', 'Long Black Hot Light', 'Nitri Coffee Soda', 'Long Black Ice Bold', 'Earl Grey', 'Burger Classic Chicken', 'Cireng', 'Americano Hot Light', 'Cappuchino Ice Light', 'Sate Sapi', 'Lemon Tea Hot', 'Long Black Hot Bold', 'Cappucino Hot Light', 'Choco Berry', 'Bala - Bala', 'Chicken Popcorn', 'Spaghetti Cheese Bolognese', 'Morrocant mint', 'Berliner Chocolate', 'Nasi Goreng Sambal Ijo', 'Brownies with Ice Cream', 'Cookies Oatmeal', 'Berliner Coffee Cream', 'Magic Ice Light', 'Strawberry Juice', 'Cappuccino Hot Bold', 'Extra Telur', 'Caramel Machiato', 'Croissant Bacon & Egg', 'Tartlet Strawberry Cheese', 'Nasi Goreng Sambal Cikur', 'Vanilla Sweet Tea ice', 'Piccolo Bold'
+])
 
 # Create Categorized dict
 product_categories = {"Minuman": [], "Makanan": [], "Pastry": []}
@@ -301,12 +308,16 @@ elif menu_selection == "Ide Promo Bundling":
             menu_B = ", ".join(list(row['consequents']))
             
             st.markdown(f"""
-            <div class="glass-card" style="border-left: 6px solid #f59e0b;">
-                <h3 style="margin-top:0; color:#b45309;">🌟 Paket Spesial #{i+1}</h3>
-                <h2 style="margin: 10px 0;">{menu_A} ➕ {menu_B}</h2>
-                <p><b>Alasan AI:</b> Pelanggan yang membeli {menu_A} memiliki ketertarikan <b>{row['lift']:.2f}x lipat lebih tinggi</b> untuk juga membeli {menu_B}.</p>
-                <div class="promo-card">
-                    💡 <b>Ide Promo:</b> "Diskon 10% untuk pembelian {menu_B} setiap pembelian {menu_A}!"
+            <div style="padding: 15px 20px; border-bottom: 1px solid rgba(128,128,128,0.2); margin-bottom: 10px;">
+                <div style="display:flex; align-items:center; margin-bottom: 8px;">
+                    <div style="font-size: 24px; margin-right: 15px;">🎁</div>
+                    <div>
+                        <h4 style="margin:0; font-weight:700; color:var(--text-color);">Paket: {menu_A} + {menu_B}</h4>
+                        <p style="margin:0; font-size:14px; color:gray;">Kekuatan Asosiasi: {row['lift']:.1f}x lebih tinggi</p>
+                    </div>
+                </div>
+                <div style="padding: 10px 15px; background: rgba(59, 130, 246, 0.05); border-radius: 8px; border-left: 4px solid #3b82f6; font-size: 14px; margin-left: 40px;">
+                    <b>💡 Ide Promosi:</b> Beli {menu_A}, dapatkan diskon 10% untuk {menu_B}!
                 </div>
             </div>
             """, unsafe_allow_html=True)
