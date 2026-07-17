@@ -95,15 +95,6 @@ MANUAL_RECOMMENDATIONS = {
 @st.cache_data
 def load_data():
     try:
-        # Prioritize loading dynamic rules if they exist and are not empty
-        if os.path.exists("data/dynamic_rules.csv"):
-            df = pd.read_csv("data/dynamic_rules.csv")
-            if len(df) > 0:
-                # Convert string representation of frozenset back to frozenset
-                df['antecedents'] = df['antecedents'].apply(lambda x: frozenset(eval(x.replace('frozenset(', '').replace(')', ''))))
-                df['consequents'] = df['consequents'].apply(lambda x: frozenset(eval(x.replace('frozenset(', '').replace(')', ''))))
-                return df
-
         if os.path.exists("data/Rekomendasi_CrossSell.xlsx"):
             df = pd.read_excel("data/Rekomendasi_CrossSell.xlsx")
             df['antecedents'] = df['antecedents'].apply(lambda x: frozenset([i.strip() for i in x.split(',')]))
