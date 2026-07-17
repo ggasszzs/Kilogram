@@ -273,7 +273,7 @@ if menu_selection == "Kasir & Rekomendasi":
                     
                     # Kolom Kiri: AI
                     with rec_col1:
-                        st.markdown("<h5 style='color:#10b981;'>🤖 Berdasarkan AI Data</h5>", unsafe_allow_html=True)
+                        st.markdown("<h5 style='color:#10b981;'>🤖 Berdasarkan Data</h5>", unsafe_allow_html=True)
                         for r in unique_ai_recs[:3]:
                             st.markdown(f"""
                             <div class="rec-item">
@@ -286,7 +286,7 @@ if menu_selection == "Kasir & Rekomendasi":
                             
                     # Kolom Kanan: Manual Owner
                     with rec_col2:
-                        st.markdown("<h5 style='color:#f59e0b;'>👨‍🍳 Pilihan Spesial Koki</h5>", unsafe_allow_html=True)
+                        st.markdown("<h5 style='color:#f59e0b;'>👨‍🍳 Berdasarkan Barista</h5>", unsafe_allow_html=True)
                         if len(manual_recs) == 0:
                             st.markdown("<i style='color:gray; font-size:13px;'>Tidak ada saran spesial.</i>", unsafe_allow_html=True)
                         for m_item in manual_recs[:3]:
