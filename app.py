@@ -392,8 +392,10 @@ elif menu_selection == "Visualisasi Data":
     with m1: st.metric("Total Menu", len(all_products))
     with m2: st.metric("Pola Asosiasi Kuat", len(df_rules))
     with m3: 
-        max_conf = (df_rules['confidence'].max() * 100) if len(df_rules)>0 else 0
-        st.metric("Akurasi Tertinggi", f"{max_conf:.1f}%")
+        max_acc = 0
+        if len(df_rules) > 0:
+            max_acc = df_rules['confidence'].max() * 100
+        st.metric("Tingkat Kepercayaan Tertinggi (Confidence)", f"{max_acc:.1f}%")
         
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -472,30 +474,6 @@ elif menu_selection == "Database Aturan":
     else:
         st.warning("File `Matriks_Biner.xlsx` belum ditemukan di sistem.")
 
-    st.markdown("<br><br><h2>⚙️ Aturan Asosiasi (Apriori Rules)</h2>", unsafe_allow_html=True)
-    
-    if len(df_rules) > 0:
-        formatted_df = df_rules.copy()
-        formatted_df['antecedents'] = formatted_df['antecedents'].apply(lambda x: ", ".join(list(x)))
-        formatted_df['consequents'] = formatted_df['consequents'].apply(lambda x: ", ".join(list(x)))
-        formatted_df['support'] = formatted_df['support'].apply(lambda x: f"{x:.5f}")
-        formatted_df['confidence'] = formatted_df['confidence'].apply(lambda x: f"{x:.4f}")
-        formatted_df['lift'] = formatted_df['lift'].apply(lambda x: f"{x:.4f}")
-        
-        st.dataframe(
-            formatted_df, 
-            use_container_width=True,
-            height=600,
-            column_config={
-                "antecedents": st.column_config.TextColumn("Jika Pelanggan Beli", width="large"),
-                "consequents": st.column_config.TextColumn("Maka Tawarkan", width="large"),
-                "support": "Support Score",
-                "confidence": "Confidence Score",
-                "lift": "Lift Ratio"
-            }
-        )
-    else:
-        st.warning("Data aturan kosong.")
 
     st.markdown("<hr style='border-color: rgba(128,128,128,0.2); margin: 40px 0;'>", unsafe_allow_html=True)
 
