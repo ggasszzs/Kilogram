@@ -107,7 +107,10 @@ st.markdown("""
 # ==============================================================================
 # 3. KATEGORI & REKOMENDASI MANUAL
 # ==============================================================================
-def get_category(product_name):
+def get_category(product_name, cat_map=None):
+    if cat_map and product_name in cat_map:
+        return cat_map[product_name]
+        
     name_lower = product_name.lower()
     makanan_keywords = ['nasi', 'sate', 'ayam', 'spaghetti', 'burger', 'sandwich', 'fries', 'cireng', 'bala', 'omelete', 'tahu', 'telur', 'wings', 'tempe', 'chicken']
     pastry_keywords = ['croissant', 'kouign', 'pain', 'berliner', 'tartlet', 'brownies', 'cookies', 'churros', 'pancake', 'monkey', 'brule', 'nut bar']
@@ -154,30 +157,54 @@ def load_data():
         return pd.DataFrame(columns=['antecedents', 'consequents', 'support', 'confidence', 'lift'])
 
 @st.cache_data
-def load_raw_matrix():
+def load_all_products():
     try:
-        if os.path.exists("data/Akurasi_CrossSell.xlsx"):
-            return pd.read_excel("data/Akurasi_CrossSell.xlsx")
+        if os.path.exists("data/Dataset_Lengkap_KilogramSpace.xlsx"):
+            df_full = pd.read_excel("data/Dataset_Lengkap_KilogramSpace.xlsx")
+            unique_products = df_full['Produk'].dropna().unique().tolist()
+            unique_products = sorted([str(p).strip() for p in unique_products])
+            
+            # Map categories
+            cat_map = {}
+            for _, row in df_full.drop_duplicates(subset=['Produk']).iterrows():
+                p_name = str(row['Produk']).strip()
+                cat_raw = str(row['Kategori']).upper()
+                
+                if 'BAR' in cat_raw:
+                    cat = "Minuman"
+                elif 'PASTRY' in cat_raw:
+                    cat = "Pastry"
+                else:
+                    cat = "Makanan"
+                cat_map[p_name] = cat
+                
+            return unique_products, cat_map
     except Exception as e:
         pass
-    return pd.DataFrame()
+    
+    return [], {}
 
 def process_transaction_and_retrain(cart_items):
     # Dummy processing func to simulate training
     time.sleep(2)
-    return True
+    st.session_state.show_manual_add = False
+    st.rerun()
 
 df_rules = load_data()
+dynamic_products, dynamic_cat_map = load_all_products()
 
-# Semua menu restoran di-hardcode agar tidak hilang meski belum ada di data rules
-all_products = sorted([
-    'Cookies Choco', 'Java Latte', 'Magic Ice Bold', 'Matcha Ice', 'Nasi Ayam Goreng', 'Flat White Bold', 'Kilo Cold White', 'Pain Au Chocolat', 'Kouign Amann', 'Churros Plain', 'Iced Lychee Tea', 'Nut Bar', 'Hojicha Ice', 'Nasi Ayam Bakar', 'Americano Hot Bold', 'Chicken Wings', 'Hojicha Hot', 'Sate Ayam', 'Croissant Almond', 'Affogato', 'Latte Hot Bold', 'Long Black Ice Light', 'Aloe Fresh', 'Green tea', 'Americano Ice Bold', 'Magic Hot Bold', 'Monkey Bread', 'Sandwich Chicken Spicy Mango', 'Tempe Mendoan', 'Latte Hot Light', 'Yellow Breeze', 'Butter Croissant', 'Extra Shot Espresso', 'Creme Brule', 'Romansky', 'Churros Beton', 'Berrymore', 'Tartlet Chocolate', 'Pancake with Ice Cream', 'Matcha Berry', 'French Fries', 'Burger Classic Beef', 'Tahu Goreng Lada Garam', 'Honey Lemon', 'Ice Cream', 'Cold Pressed Orange Juice', 'Matcha Hot', 'Ice Tea', 'Iced Kilo', 'Jahe Lemon', 'Berliner Vanila', 'Americano Ice Light', 'Nasi Goreng Teri Honje', 'Cappucino Ice Bold', 'Chillie Fries', 'Sandwich Chicken Lemon Mayo', 'Chocolate Ice', 'Kunyit Asem', 'Chocolate Hot', 'Latte Ice Light', 'Spaghetti Carbonara', 'Croissant Bacon & Cheese Sandwich', 'Espresso Bold', 'Latte Ice Bold', 'Spaghetti Aglio e Olio', 'Omelete', 'Lemon Tea Ice', 'Ocean Eyes', 'Blue Lagoon', 'Mineral Water', 'Long Black Hot Light', 'Nitri Coffee Soda', 'Long Black Ice Bold', 'Earl Grey', 'Burger Classic Chicken', 'Cireng', 'Americano Hot Light', 'Cappuchino Ice Light', 'Sate Sapi', 'Lemon Tea Hot', 'Long Black Hot Bold', 'Cappucino Hot Light', 'Choco Berry', 'Bala - Bala', 'Chicken Popcorn', 'Spaghetti Cheese Bolognese', 'Morrocant mint', 'Berliner Chocolate', 'Nasi Goreng Sambal Ijo', 'Brownies with Ice Cream', 'Cookies Oatmeal', 'Berliner Coffee Cream', 'Magic Ice Light', 'Strawberry Juice', 'Cappuccino Hot Bold', 'Extra Telur', 'Caramel Machiato', 'Croissant Bacon & Egg', 'Tartlet Strawberry Cheese', 'Nasi Goreng Sambal Cikur', 'Vanilla Sweet Tea ice', 'Piccolo Bold'
-])
+if len(dynamic_products) > 0:
+    all_products = dynamic_products
+else:
+    # Fallback hardcoded list jika file excel tidak ditemukan
+    all_products = sorted([
+        'Cookies Choco', 'Java Latte', 'Magic Ice Bold', 'Matcha Ice', 'Nasi Ayam Goreng', 'Flat White Bold', 'Kilo Cold White', 'Pain Au Chocolat', 'Kouign Amann', 'Churros Plain', 'Iced Lychee Tea', 'Nut Bar', 'Hojicha Ice', 'Nasi Ayam Bakar', 'Americano Hot Bold', 'Chicken Wings', 'Hojicha Hot', 'Sate Ayam', 'Croissant Almond', 'Affogato', 'Latte Hot Bold', 'Long Black Ice Light', 'Aloe Fresh', 'Green tea', 'Americano Ice Bold', 'Magic Hot Bold', 'Monkey Bread', 'Sandwich Chicken Spicy Mango', 'Tempe Mendoan', 'Latte Hot Light', 'Yellow Breeze', 'Butter Croissant', 'Extra Shot Espresso', 'Creme Brule', 'Romansky', 'Churros Beton', 'Berrymore', 'Tartlet Chocolate', 'Pancake with Ice Cream', 'Matcha Berry', 'French Fries', 'Burger Classic Beef', 'Tahu Goreng Lada Garam', 'Honey Lemon', 'Ice Cream', 'Cold Pressed Orange Juice', 'Matcha Hot', 'Ice Tea', 'Iced Kilo', 'Jahe Lemon', 'Berliner Vanila', 'Americano Ice Light', 'Nasi Goreng Teri Honje', 'Cappucino Ice Bold', 'Chillie Fries', 'Sandwich Chicken Lemon Mayo', 'Chocolate Ice', 'Kunyit Asem', 'Chocolate Hot', 'Latte Ice Light', 'Spaghetti Carbonara', 'Croissant Bacon & Cheese Sandwich', 'Espresso Bold', 'Latte Ice Bold', 'Spaghetti Aglio e Olio', 'Omelete', 'Lemon Tea Ice', 'Ocean Eyes', 'Blue Lagoon', 'Mineral Water', 'Long Black Hot Light', 'Nitri Coffee Soda', 'Long Black Ice Bold', 'Earl Grey', 'Burger Classic Chicken', 'Cireng', 'Americano Hot Light', 'Cappuchino Ice Light', 'Sate Sapi', 'Lemon Tea Hot', 'Long Black Hot Bold', 'Cappucino Hot Light', 'Choco Berry', 'Bala - Bala', 'Chicken Popcorn', 'Spaghetti Cheese Bolognese', 'Morrocant mint', 'Berliner Chocolate', 'Nasi Goreng Sambal Ijo', 'Brownies with Ice Cream', 'Cookies Oatmeal', 'Berliner Coffee Cream', 'Magic Ice Light', 'Strawberry Juice', 'Cappuccino Hot Bold', 'Extra Telur', 'Caramel Machiato', 'Croissant Bacon & Egg', 'Tartlet Strawberry Cheese', 'Nasi Goreng Sambal Cikur', 'Vanilla Sweet Tea ice', 'Piccolo Bold'
+    ])
 
 # Create Categorized dict
 product_categories = {"Minuman": [], "Makanan": [], "Pastry": []}
 for p in all_products:
-    product_categories[get_category(p)].append(p)
+    product_categories[get_category(p, cat_map=dynamic_cat_map)].append(p)
 
 # ==============================================================================
 # 5. SIDEBAR & NAVIGASI
