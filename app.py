@@ -122,7 +122,11 @@ MANUAL_RECOMMENDATIONS = {
     "Nasi Goreng Sambal Ijo": ["Ice Tea", "Tempe Mendoan"],
     "Americano Ice Bold": ["Butter Croissant", "Churros Plain"],
     "Spaghetti Aglio e Olio": ["Lemon Tea Ice"],
-    "Kilo Cold White": ["Pain Au Chocolat"]
+    "Kilo Cold White": ["Pain Au Chocolat"],
+    "Iced Lychee Tea": ["Churros Beton", "Nut Bar"],
+    "Matcha Ice": ["Tartlet Strawberry Cheese", "Berliner Vanila"],
+    "Churros Beton": ["Chocolate Ice", "Americano Hot Bold"],
+    "Burger Classic Beef": ["French Fries", "Americano Ice Light"],
 }
 
 # ==============================================================================
@@ -148,6 +152,15 @@ def load_data():
         return pd.DataFrame(columns=['antecedents', 'consequents', 'support', 'confidence', 'lift'])
     except Exception as e:
         return pd.DataFrame(columns=['antecedents', 'consequents', 'support', 'confidence', 'lift'])
+
+@st.cache_data
+def load_raw_matrix():
+    try:
+        if os.path.exists("data/Matriks_Biner.xlsx"):
+            return pd.read_excel("data/Matriks_Biner.xlsx")
+    except Exception as e:
+        pass
+    return pd.DataFrame()
 
 def process_transaction_and_retrain(cart_items):
     # Dummy processing func to simulate training
@@ -274,6 +287,8 @@ if menu_selection == "Kasir & Rekomendasi":
                     # Kolom Kiri: AI
                     with rec_col1:
                         st.markdown("<h5 style='color:#10b981;'>🤖 Berdasarkan Data</h5>", unsafe_allow_html=True)
+                        if len(unique_ai_recs) == 0:
+                            st.markdown("<i style='color:gray; font-size:13px;'>Tidak ada data histori yang cukup.</i>", unsafe_allow_html=True)
                         for r in unique_ai_recs[:3]:
                             st.markdown(f"""
                             <div class="rec-item">
@@ -445,9 +460,19 @@ elif menu_selection == "Visualisasi Data":
 # 9. DATABASE ATURAN APRIORI
 # ==============================================================================
 elif menu_selection == "Database Aturan":
-    st.title("⚙️ Database Algoritma (Raw Data)")
-    st.markdown("<p class='text-muted'>Tabel di bawah ini menampilkan hasil komputasi <i>Machine Learning</i> Apriori.</p>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<h2>⚙️ Database Matriks Transaksi (Raw Data)</h2>", unsafe_allow_html=True)
+    st.markdown("Tabel di bawah ini menampilkan data *Matriks Biner* (One-Hot Encoding) dari seluruh riwayat transaksi Anda.")
+    
+    with st.spinner("⏳ Sedang memuat jutaan data sel matriks (ini membutuhkan beberapa detik)..."):
+        df_matrix = load_raw_matrix()
+        
+    if not df_matrix.empty:
+        st.dataframe(df_matrix.head(1000), use_container_width=True, hide_index=True)
+        st.caption(f"Menampilkan 1000 baris pertama dari total **{len(df_matrix):,}** transaksi restoran Anda.")
+    else:
+        st.warning("File `Matriks_Biner.xlsx` belum ditemukan di sistem.")
+
+    st.markdown("<br><br><h2>⚙️ Aturan Asosiasi (Apriori Rules)</h2>", unsafe_allow_html=True)
     
     if len(df_rules) > 0:
         formatted_df = df_rules.copy()
