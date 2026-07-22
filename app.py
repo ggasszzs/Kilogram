@@ -135,8 +135,8 @@ MANUAL_RECOMMENDATIONS = {
 @st.cache_data
 def load_data():
     try:
-        if os.path.exists("data/Rekomendasi_CrossSell.xlsx"):
-            df = pd.read_excel("data/Rekomendasi_CrossSell.xlsx")
+        if os.path.exists("data/Akurasi_CrossSell.xlsx"):
+            df = pd.read_excel("data/Akurasi_CrossSell.xlsx")
             # Parse the string "frozenset({'Item'})" back to an actual frozenset
             def parse_frozenset(val):
                 if isinstance(val, str) and val.startswith("frozenset"):
@@ -156,8 +156,8 @@ def load_data():
 @st.cache_data
 def load_raw_matrix():
     try:
-        if os.path.exists("data/Matriks_Biner.xlsx"):
-            return pd.read_excel("data/Matriks_Biner.xlsx")
+        if os.path.exists("data/Akurasi_CrossSell.xlsx"):
+            return pd.read_excel("data/Akurasi_CrossSell.xlsx")
     except Exception as e:
         pass
     return pd.DataFrame()
@@ -393,9 +393,11 @@ elif menu_selection == "Visualisasi Data":
     with m2: st.metric("Pola Asosiasi Kuat", len(df_rules))
     with m3: 
         max_acc = 0
-        if len(df_rules) > 0:
+        if len(df_rules) > 0 and 'Akurasi (%)' in df_rules.columns:
+            max_acc = df_rules['Akurasi (%)'].max() * 100
+        elif len(df_rules) > 0:
             max_acc = df_rules['confidence'].max() * 100
-        st.metric("Tingkat Kepercayaan Tertinggi (Confidence)", f"{max_acc:.1f}%")
+        st.metric("Akurasi Tertinggi", f"{max_acc:.1f}%")
         
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -462,18 +464,40 @@ elif menu_selection == "Visualisasi Data":
 # 9. DATABASE ATURAN APRIORI
 # ==============================================================================
 elif menu_selection == "Database Aturan":
-    st.markdown("<h2>⚙️ Database Matriks Transaksi (Raw Data)</h2>", unsafe_allow_html=True)
-    st.markdown("Tabel di bawah ini menampilkan data *Matriks Biner* (One-Hot Encoding) dari seluruh riwayat transaksi Anda.")
+    st.markdown("<h2>⚙️ Database Akurasi Cross-Selling</h2>", unsafe_allow_html=True)
+    st.markdown("Tabel di bawah ini menampilkan hasil aturan Asosiasi Apriori lengkap dengan metrik Akurasinya.")
     
-    with st.spinner("⏳ Sedang memuat jutaan data sel matriks (ini membutuhkan beberapa detik)..."):
-        df_matrix = load_raw_matrix()
+    if len(df_rules) > 0:
+        formatted_df = df_rules.copy()
         
-    if not df_matrix.empty:
-        st.dataframe(df_matrix.head(1000), use_container_width=True, hide_index=True)
-        st.caption(f"Menampilkan 1000 baris pertama dari total **{len(df_matrix):,}** transaksi restoran Anda.")
-    else:
-        st.warning("File `Matriks_Biner.xlsx` belum ditemukan di sistem.")
+        # Helper function to extract text from frozenset string or frozenset object
+        def extract_items(val):
+            if isinstance(val, frozenset):
+                return ", ".join(list(val))
+            if isinstance(val, str) and val.startswith("frozenset"):
+                try:
+                    parsed = eval(val.replace("frozenset(", "").replace(")", ""))
+                    return ", ".join(list(parsed))
+                except:
+                    pass
+            return str(val)
 
+        formatted_df['antecedents'] = formatted_df['antecedents'].apply(extract_items)
+        formatted_df['consequents'] = formatted_df['consequents'].apply(extract_items)
+        
+        if 'Akurasi (%)' in formatted_df.columns:
+            formatted_df['Akurasi (%)'] = formatted_df['Akurasi (%)'].apply(lambda x: f"{x*100:.2f}%")
+            
+        st.dataframe(
+            formatted_df.rename(columns={
+                'antecedents': 'Jika Pelanggan Beli',
+                'consequents': 'Maka Tawarkan'
+            }),
+            use_container_width=True,
+            hide_index=False
+        )
+    else:
+        st.warning("File `Akurasi_CrossSell.xlsx` belum ditemukan di sistem.")
 
     st.markdown("<hr style='border-color: rgba(128,128,128,0.2); margin: 40px 0;'>", unsafe_allow_html=True)
 
