@@ -226,6 +226,12 @@ menu_selection = st.sidebar.radio(
 
 st.sidebar.markdown("<hr style='border-color: rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
 st.sidebar.markdown("👤 **Info Profil**<br><span style='font-size:14px; color:gray;'>Role: Administrator<br>Cabang: Pusat</span>", unsafe_allow_html=True)
+
+if st.sidebar.button("🔄 Refresh Data", use_container_width=True):
+    st.cache_data.clear()
+    st.rerun()
+
+st.sidebar.caption("Klik tombol ini jika data Excel atau aturan berubah, supaya cache ter-reset dan tampilan terbaru muncul.")
 st.sidebar.markdown("<hr style='border-color: rgba(128,128,128,0.2);'>", unsafe_allow_html=True)
 st.sidebar.info("💡 **Panduan:** Klik ikon panah di pojok kiri atas layar untuk melipat (menyembunyikan) atau memunculkan menu ini.")
 
@@ -412,7 +418,7 @@ elif menu_selection == "Ide Promo Bundling":
 # 8. VISUALISASI DATA
 # ==============================================================================
 elif menu_selection == "Visualisasi Data":
-    st.title("📊 Dashboard Analitik & Performa AI")
+    st.title("📊 Dashboard")
     st.markdown("<p class='text-muted'>Analisis pola belanja pelanggan Anda secara visual.</p>", unsafe_allow_html=True)
     
     m1, m2, m3 = st.columns(3)
